@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['@phosphor-icons/react'],
+    agentUpgrade: 'security',
   },
   allowedDevOrigins: ['192.168.107.1'],
   images: {
