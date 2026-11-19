@@ -45,12 +45,38 @@ only after design-lead and supervisor sign-off.
 
 ## MVP 3 — Profile · Phase 0 · PR-1 to PR-6
 
-- [ ] One flow over two objects: brand layer and personal layer (PR-1)
-- [ ] Goals multi-select with exactly one primary (PR-2)
-- [ ] Location required only once "Local" is checked, validated live (PR-3)
-- [ ] 12 archetypes with inline descriptions (PR-4) — final copy blocked on 2.12
-- [ ] Always On defaults to "hanya saat ada hal signifikan" (PR-5)
-- [ ] No competitor field, no tone/language selector (PR-6)
+Route `/profil` (signed-in only), one page of blocks that each save on their own.
+Onboarding and `/profil` share the option lists (`src/lib/profileOptions.ts`),
+the goal / Always On pickers and the location field, so the answers stay interchangeable.
+
+- [x] One flow over two objects: "Data Diri" (personal layer) and "Brand" (brand layer) blocks (PR-1)
+- [x] Goals multi-select with exactly one primary (PR-2)
+- [ ] Location required only once "Local" is checked, validated live (PR-3) — today a location is always required (onboarding made the same call); confirm against the PRD
+- [x] 12 archetypes with inline descriptions (PR-4) — final copy blocked on 2.12
+- [x] Always On defaults to "hanya saat ada hal signifikan" (PR-5)
+- [x] No competitor field, no tone/language selector (PR-6)
+- [x] Read + update: name, role, account type, category, target market, archetype, location / local focus, goals, morning email time, Always On
+- [x] Email change through Supabase's confirmation link; pending address shown until confirmed
+- [x] Password change, checked against the current password first; social-only accounts can set one
+- [x] Log out through the header's "Keluar" (desktop and mobile menu)
+- [x] Delete account (`DELETE /api/account`, type "HAPUS" to confirm): auth user → profile and `elias_usage` cascade, cached Elias answers and this device's archive cleared
+- [x] Elias analyses re-run after a brand edit: the cache key now includes the brand's answers (`v3_` keys)
+
+### Profile backlog
+
+High priority
+- [ ] Test the email change end to end: `/auth/callback` must be in Supabase Auth → Redirect URLs, and with "Secure email change" on, both addresses must confirm
+- [ ] Production needs `SUPABASE_SECRET_KEY` for account deletion; without it the route answers 503
+- [ ] With "Secure password change" on, Supabase asks for a reauthentication code: add the OTP step instead of only showing the error
+- [ ] Archive copies on other devices survive account deletion until the archive moves to the database (MVP 4)
+- [ ] Re-point the brand block at `brand_profile` once MVP 4 splits `profiles`
+
+Later
+- [ ] Download my data (profile + archive as JSON)
+- [ ] Pause the morning email without losing the chosen time (ED-2)
+- [ ] Connected accounts (link or unlink Google etc.) once social sign-in is switched on
+- [ ] Warn before leaving `/profil` with unsaved edits
+- [ ] Avatar upload (Supabase Storage); V1 header stays wordmark-only
 
 ## MVP 4 — Data model · Phase 1 · DM-1 to DM-8
 

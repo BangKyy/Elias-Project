@@ -119,22 +119,11 @@ export default function EliasTrendCard({ insight, brandContext, userRole }: Elia
       aria-label={`Analisis Elias untuk ${creativeRoleLabels[userRole]}`}
       className="flex flex-col gap-2.5 rounded-[4px] bg-txt-black p-5 text-paper"
     >
-      <ul aria-label="Disesuaikan untuk" className="flex flex-wrap gap-2.5">
-        {[creativeRoleLabels[userRole], archetype].filter(Boolean).map((label) => (
-          <li key={label} className="border border-primary px-3 py-1.5 font-mono text-xs font-bold text-primary uppercase">
-            {label}
-          </li>
-        ))}
-      </ul>
-
       {state.kind === 'idle' && (
-        <>
-          <p className="text-md font-medium text-txt-white">So what untuk peran kamu, <strong className="font-bold">satu action brief yang bisa dikerjakan hari ini</strong>, juga saran copy sesuai tone brand.</p>
-          <button type="button" onClick={analyse} className={smallCta}>
-            <MagicWand size={16} aria-hidden />
-            Analisis topik tren ini untuk brand kamu
-          </button>
-        </>
+        <button type="button" onClick={analyse} className={smallCta}>
+          <MagicWand size={16} aria-hidden />
+          Analisis topik tren ini untuk brand kamu
+        </button>
       )}
 
       {state.kind === 'loading' && (
@@ -167,8 +156,10 @@ export default function EliasTrendCard({ insight, brandContext, userRole }: Elia
 
       {state.kind === 'done' && (
         <>
+          <p className="w-fit border border-primary px-3 py-1.5 font-mono text-xs font-bold text-primary uppercase">Hasil analisis Elias</p>
+
           {/* Decision first */}
-          <p className="border-l-2 border-primary pl-[18px] text-2xl font-bold text-txt-white">{state.result.headline}</p>
+          <p className="border-l-2 border-primary pl-4 text-2xl font-bold text-txt-white">{state.result.headline}</p>
 
           {/* Folds by animating its row from 0fr to 1fr; inert while closed so focus skips it */}
           <div
@@ -196,7 +187,7 @@ export default function EliasTrendCard({ insight, brandContext, userRole }: Elia
                     <p className="font-bold">{executionFormatLabels[state.result.action.format]}</p>
                     <p>{state.result.action.angle}</p>
                     {state.result.action.steps.length > 0 && (
-                      <ol className="mt-1.5 list-decimal pl-[18px] text-xs text-disabled-surface">
+                      <ol className="list-decimal pl-[18px] text-xs text-disabled-surface">
                         {state.result.action.steps.map((step) => (
                           <li key={step}>{step}</li>
                         ))}

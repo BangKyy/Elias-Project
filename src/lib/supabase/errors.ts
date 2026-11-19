@@ -14,6 +14,8 @@ const messages: Record<string, string> = {
   email_not_confirmed: 'Email kamu belum dikonfirmasi. Buka tautan konfirmasi yang kami kirim.',
   otp_expired: 'Kode salah atau sudah kedaluwarsa.',
   same_password: 'Kata sandi baru harus berbeda dari kata sandi sebelumnya.',
+  reauthentication_needed: 'Demi keamanan, masuk ulang dulu sebelum mengganti kata sandi.',
+  email_address_not_authorized: 'Email ke alamat ini belum bisa dikirim. Coba alamat lain.',
 };
 
 export function errorMessage(error: AuthError | PostgrestError): string {

@@ -12,6 +12,18 @@ const STORAGE_PREFIX = 'elias.insight.v4.';
 const memory = new Map<string, Success>();
 const inFlight = new Map<string, Promise<InsightResponse>>();
 
+/** Forgets every answer this tab holds, e.g. once the account is deleted. */
+export function forgetCachedInsights() {
+  memory.clear();
+  try {
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith('elias.insight.')) sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Storage blocked: memory was the only copy
+  }
+}
+
 /** A previously fetched answer, from memory or this tab's session storage. */
 export function cachedInsight(request: InsightRequest): Success | null {
   const key = insightCacheKey(request);

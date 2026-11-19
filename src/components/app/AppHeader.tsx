@@ -15,7 +15,7 @@ const navItems = [
   { label: 'Beranda', href: '/', ready: true },
   { label: 'Arsip', href: '/arsip', ready: true },
   { label: 'Chat', href: '/chat', ready: false },
-  { label: 'Profil', href: '/profil', ready: false },
+  { label: 'Profil', href: '/profil', ready: true },
 ];
 
 function NavItems({ pathname, mobile = false }: { pathname: string; mobile?: boolean }) {

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users } from '@phosphor-icons/react';
 import { createClient } from '@/lib/supabase/client';
+import { accountTypeOptions as accountTypes } from '@/lib/profileOptions';
 import { errorMessage } from '@/lib/supabase/errors';
 import { REMEMBER_METADATA, setRememberPreference } from '@/lib/supabase/remember';
 import {
@@ -21,16 +22,6 @@ import {
 } from '../auth/fields';
 import { onboardingFlow } from '../progress/flows';
 import PhaseProgress from '../progress/PhaseProgress';
-
-// Must match profiles_account_type_check
-const accountTypes = [
-  { value: 'personal', label: 'Personal' },
-  { value: 'freelancer', label: 'Freelancer' },
-  { value: 'brand', label: 'Brand / Bisnis' },
-  { value: 'agency', label: 'Agency' },
-  { value: 'studio', label: 'Studio' },
-  { value: 'organization', label: 'Organisasi / Komunitas' },
-];
 
 export default function SignupForm() {
   const router = useRouter();

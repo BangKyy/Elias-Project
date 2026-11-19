@@ -96,13 +96,27 @@ function subscribe(listener: () => void) {
   };
 }
 
+const accountKey = (userId: string) => `elias.archive.v1.user.${userId}`;
+
+/** Drops an account's archive from this device, e.g. once the account is deleted. */
+export function forgetAccountArchive(userId: string) {
+  const key = accountKey(userId);
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Storage blocked: only the in-memory copy existed
+  }
+  cache.delete(key);
+  listeners.forEach((listener) => listener());
+}
+
 type Owner = { key: string; isAccount: boolean };
 const OwnerContext = createContext<Owner>({ key: GUEST_KEY, isAccount: false });
 
 /** Scopes every archive read and write below it to one owner. */
 export function ArchiveProvider({ userId, children }: { userId: string | null; children: ReactNode }) {
   const owner = useMemo(
-    () => (userId ? { key: `elias.archive.v1.user.${userId}`, isAccount: true } : { key: GUEST_KEY, isAccount: false }),
+    () => (userId ? { key: accountKey(userId), isAccount: true } : { key: GUEST_KEY, isAccount: false }),
     [userId],
   );
   return <OwnerContext value={owner}>{children}</OwnerContext>;

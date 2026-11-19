@@ -320,6 +320,8 @@ export type SelectOption = {
   label: string;
   /** Replaces the hint once this option is chosen, instead of hiding it */
   description?: string;
+  /** Listed but not choosable, e.g. a source that isn't supported yet */
+  disabled?: boolean;
 };
 
 /**
@@ -360,7 +362,8 @@ function scrollToSelected(list: HTMLElement) {
 }
 
 type DropdownFieldProps = FieldProps & {
-  icon: Icon;
+  /** Left out on compact filters, where the label already names the field */
+  icon?: Icon;
   label: string;
   name: string;
   options: SelectOption[];
@@ -532,7 +535,7 @@ export function DropdownField({
           } outline-none`}
         >
           <span className="flex min-w-0 items-center gap-2.5">
-            <InputIcon icon={icon} />
+            {icon && <InputIcon icon={icon} />}
             <span className={`truncate text-lg ${selected ? 'text-txt-black' : 'text-disabled-content'}`}>
               {selected?.label ?? label}
             </span>
@@ -559,9 +562,10 @@ export function DropdownField({
           {options.map((option) => {
             const isSelected = option.value === value;
             return (
-              <li key={option.value} role="option" aria-selected={isSelected}>
+              <li key={option.value} role="option" aria-selected={isSelected} aria-disabled={option.disabled}>
                 <button
                   type="button"
+                  disabled={option.disabled}
                   onClick={() => {
                     onChange(option.value);
                     close();
@@ -569,7 +573,7 @@ export function DropdownField({
                   className={`relative flex w-full items-center justify-between py-4 pr-4 text-left text-lg drop-shadow-[0_1px_1px_rgba(12,11,16,0.06)] transition-colors ${
                     isSelected
                       ? 'bg-linear-to-r from-primary/10 to-white/0 pl-[34px] font-semibold text-primary'
-                      : 'bg-bg-white pl-4 text-disabled-content hover:bg-neutral-100'
+                      : 'bg-bg-white pl-4 text-disabled-content hover:enabled:bg-neutral-100 disabled:cursor-not-allowed disabled:text-disabled-surface'
                   }`}
                 >
                   {isSelected && <span aria-hidden className="absolute inset-y-0 left-0 w-1 rounded-full bg-primary" />}
@@ -612,15 +616,16 @@ export function DropdownField({
                   {options.map((option) => {
                     const isSelected = option.value === pending;
                     return (
-                      <li key={option.value} data-sheet-item role="option" aria-selected={isSelected}>
+                      <li key={option.value} data-sheet-item role="option" aria-selected={isSelected} aria-disabled={option.disabled}>
                         <button
                           type="button"
+                          disabled={option.disabled}
                           data-chip={isSelected ? 'selected' : undefined}
                           onClick={() => setPending(option.value)}
                           className={`relative flex min-h-[60px] w-full items-center justify-between gap-3 overflow-hidden rounded-lg px-[18px] py-3 text-left text-lg transition-colors ${
                             isSelected
                               ? 'bg-primary font-semibold text-bg-white'
-                              : 'border border-disabled-surface bg-txt-white text-disabled-surface'
+                              : 'border border-disabled-surface bg-txt-white text-disabled-surface disabled:cursor-not-allowed disabled:opacity-50'
                           }`}
                         >
                           {isSelected && (
@@ -641,7 +646,7 @@ export function DropdownField({
                 <button
                   type="button"
                   data-sheet-item
-                  disabled={!pending}
+                  disabled={!options.some((option) => option.value === pending && !option.disabled)}
                   onClick={() => {
                     onChange(pending);
                     close();

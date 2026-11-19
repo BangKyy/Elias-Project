@@ -154,6 +154,10 @@
     visibility: visible;
     animation: shell-fade 0.5s ease-out 0.2s both;
   }
+  /* The shared form fields join the auth pages' entrance; on app pages they ride with their page-item */
+  [data-shell] [data-animate='form-item'] {
+    visibility: visible;
+  }
 
   /*
    * MotionText's "fill": every word starts faded into the background and

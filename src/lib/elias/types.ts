@@ -57,8 +57,11 @@ export type InsightRequest = {
 
 /** Shared by the server and client caches: identical requests never hit OpenRouter twice. */
 export function insightCacheKey({ brandContext, trendTopic, userRole }: InsightRequest): string {
-  // v2: calls grounded on the trend's details; v1 answers were too generic to keep serving
-  return `v2_${brandContext.id}_${trendTopic}_${userRole}`;
+  // v3: the brand's answers are part of the key, so editing them on /profil
+  // gets a fresh call instead of one made for the old brand
+  const { id, category, archetype, targetMarket, location, localFocus, goals } = brandContext;
+  const brand = [category, archetype, targetMarket, location, localFocus, goals.join(',')].join('|');
+  return `v3_${id}_${brand}_${trendTopic}_${userRole}`;
 }
 
 export const executionFormats = ['carousel', 'story', 'short_video', 'single_post', 'long_video', 'thread', 'none'] as const;
