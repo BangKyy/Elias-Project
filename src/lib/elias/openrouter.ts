@@ -1,6 +1,7 @@
 import { parseInsight } from './parse';
 import { insightSchema, systemPrompt, userMessage } from './prompt';
 import type { NewsContext } from '../gdelt';
+import type { GitHubTrends } from '../github';
 import type { YouTubeTrends } from '../youtube';
 import type { EliasInsight, InsightError, InsightRequest } from './types';
 
@@ -175,11 +176,13 @@ export async function generateInsight(
   request: InsightRequest,
   news: NewsContext,
   youtube: YouTubeTrends,
+  /** Only for tech-adjacent brands (../github), else null */
+  github: GitHubTrends | null = null,
 ): Promise<GenerateResult> {
   const completion = await requestCompletion({
     messages: [
       { role: 'system', content: systemPrompt(request) },
-      { role: 'user', content: userMessage(request, news, youtube) },
+      { role: 'user', content: userMessage(request, news, youtube, github) },
     ],
     schemaName: 'elias_insight',
     schema: insightSchema,

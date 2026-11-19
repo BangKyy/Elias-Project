@@ -37,8 +37,14 @@ const roles = Object.keys(creativeRoleLabels) as CreativeRole[];
 
 function isEvidence(value: unknown): value is Evidence {
   if (typeof value !== 'object' || value === null) return false;
-  const { title, url, detail } = value as Record<string, unknown>;
-  return typeof title === 'string' && typeof url === 'string' && typeof detail === 'string';
+  const { title, url, detail, source } = value as Record<string, unknown>;
+  return (
+    typeof title === 'string' &&
+    typeof url === 'string' &&
+    typeof detail === 'string' &&
+    // Absent on cards stored before 19 Nov 2026
+    (source === undefined || (typeof source === 'string' && source in sources))
+  );
 }
 
 /** Rows are written by our own generator, but jsonb is still checked before it reaches a card. */
@@ -85,6 +91,8 @@ const NEWS_MIGRATION = '20261106090000_insight_news_source.sql';
 // Likewise "wikipedia" until 20261119090000_insight_wikipedia_source.sql: saved
 // under Google Trends, the other what-people-looked-up source
 const WIKIPEDIA_MIGRATION = '20261119090000_insight_wikipedia_source.sql';
+// And "github" until 20261119120000_insight_github_source.sql, under Google Trends too
+const GITHUB_MIGRATION = '20261119120000_insight_github_source.sql';
 const checkViolation = (error: { code?: string } | null) => error?.code === '23514';
 
 function readCards(supabase: SupabaseClient, from: string, columns: string) {
@@ -170,8 +178,13 @@ export async function saveCycle(date: string, insights: Insight[]): Promise<void
     tagged = false;
     ({ error: cardsError } = await insertCards(rows));
   }
-  // The newer migration also allows "news", so Wikipedia is tried first
+  // Each newer migration also allows the sources before it, so the newest is tried first
   let sourced = rows;
+  if (checkViolation(cardsError) && sourced.some((row) => row.source === 'github')) {
+    console.warn(`Insight store: saving GitHub cards as Google Trends; apply ${GITHUB_MIGRATION}`);
+    sourced = sourced.map((row) => (row.source === 'github' ? { ...row, source: 'google_trends' } : row));
+    ({ error: cardsError } = await insertCards(sourced));
+  }
   if (checkViolation(cardsError) && sourced.some((row) => row.source === 'wikipedia')) {
     console.warn(`Insight store: saving Wikipedia cards as Google Trends; apply ${WIKIPEDIA_MIGRATION}`);
     sourced = sourced.map((row) => (row.source === 'wikipedia' ? { ...row, source: 'google_trends' } : row));

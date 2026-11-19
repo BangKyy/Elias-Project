@@ -2,7 +2,7 @@ import { creativeRoleLabels, type CreativeRole } from '../creativeRoles';
 import type { NewsContext } from '../gdelt';
 import type { YouTubeTrends } from '../youtube';
 import { decisionLabels } from './brief';
-import { executionFormatLabels, type EliasInsight } from './types';
+import { executionFormatLabels, newsProviderLabel, type EliasInsight } from './types';
 
 // Email clients ignore stylesheets and CSS variables, so the design tokens
 // are repeated here as literals: Studio Ink, Paper, Ignition Red
@@ -62,7 +62,7 @@ function contextSection(news: NewsContext, youtube: YouTubeTrends): string {
   const list = (items: string[]) => `<ul style="margin:0 0 16px;padding:0 0 0 18px">${items.join('')}</ul>`;
 
   const parts: string[] = [];
-  parts.push(monoLabel('// Context: GDELT · 24 jam'));
+  parts.push(monoLabel(`// Context: ${newsProviderLabel(news)} · 24 jam`));
   parts.push(
     news.status === 'ok'
       ? list(news.articles.map((a) => item(`[${esc(a.domain)}] ${link(a.url, a.title)}`)))

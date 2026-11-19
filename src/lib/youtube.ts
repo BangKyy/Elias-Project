@@ -1,3 +1,5 @@
+import { truncate } from './text';
+
 // YouTube Data API v3: what is trending on YouTube in a region right now.
 // Server only: reads YOUTUBE_API_KEY.
 //
@@ -73,7 +75,7 @@ function parseVideos(data: unknown): YouTubeVideo[] | null {
     .filter((v) => typeof v.id === 'string' && typeof v.snippet?.title === 'string')
     .map((v) => ({
       id: v.id as string,
-      title: (v.snippet!.title as string).slice(0, 200),
+      title: truncate(v.snippet!.title as string, 200),
       channelTitle: typeof v.snippet?.channelTitle === 'string' ? v.snippet.channelTitle : '',
       viewCount: Number(v.statistics?.viewCount) || 0,
       likeCount: count(v.statistics?.likeCount),
@@ -81,7 +83,7 @@ function parseVideos(data: unknown): YouTubeVideo[] | null {
       publishedAt: typeof v.snippet?.publishedAt === 'string' ? v.snippet.publishedAt : null,
       duration: typeof v.contentDetails?.duration === 'string' ? v.contentDetails.duration : null,
       tags: Array.isArray(v.snippet?.tags)
-        ? v.snippet.tags.filter((t): t is string => typeof t === 'string').slice(0, 15).map((t) => t.slice(0, 60))
+        ? v.snippet.tags.filter((t): t is string => typeof t === 'string').slice(0, 15).map((t) => truncate(t, 60))
         : [],
       thumbnail: thumbnailUrl(v),
     }));

@@ -1,4 +1,11 @@
+import { searchGoogleNews } from './newsFeeds';
+import { truncate } from './text';
+
 // GDELT DOC 2.0: free news context for a trend keyword. Server only.
+//
+// By 19 Nov 2026 GDELT refused this IP for most of the day (429 after 12
+// seconds, or no connection within 10), so a keyword lookup GDELT fails or
+// finds nothing for is asked of Google News RSS instead (fetchNewsContext).
 //
 // Rate limit, as observed on 2 Nov 2026: GDELT asks for one request every 5
 // seconds per IP and answers faster callers with HTTP 429 and a plain-text
@@ -14,14 +21,22 @@ const CACHE_TTL_MS = 3_600_000;
 const MAX_CACHE_ENTRIES = 300;
 const MAX_WAIT_MS = 6_000;
 const MAX_ARTICLES = 3;
+// A user waits on a trend's news context; the daily cycle can wait longer, and
+// on 19 Nov 2026 GDELT took 13 seconds even to refuse a request
+const TIMEOUT_MS = 10_000;
+const CYCLE_TIMEOUT_MS = 20_000;
 
 export const GDELT_BUSY_NOTE =
   'Konteks berita sedang sibuk (rate limit GDELT). Menganalisis berdasarkan konteks tren platform.';
 
 export type NewsArticle = { domain: string; title: string; url: string; seenAt: string | null };
 
+export type NewsProvider = 'gdelt' | 'google_news';
+
 export type NewsContext = {
   status: 'ok' | 'empty' | 'rate_limited' | 'error' | 'skipped';
+  /** Who answered; absent means GDELT (contexts cached before 19 Nov 2026) */
+  provider?: NewsProvider;
   /** The query sent to GDELT, null when skipped */
   query: string | null;
   articles: NewsArticle[];
@@ -89,7 +104,7 @@ function parseArticles(text: string, maxArticles: number): NewsArticle[] | null 
     .slice(0, maxArticles)
     .map((a) => ({
       domain: a.domain as string,
-      title: (a.title as string).replace(/\s+/g, ' ').trim().slice(0, 200),
+      title: truncate((a.title as string).replace(/\s+/g, ' ').trim(), 200),
       url: a.url as string,
       seenAt: parseSeenDate(a.seendate),
     }));
@@ -108,20 +123,39 @@ function toGdeltAnyQuery(keywords: string[]): string | null {
   return `(${terms.join(' OR ')})`;
 }
 
-export async function fetchGdeltNewsContext(keywords: string | string[]): Promise<NewsContext> {
+/**
+ * News of the last 24 hours for a trend's keywords: GDELT first, Google News
+ * when GDELT is busy, fails or finds nothing (it covers Indonesian outlets
+ * better). Never throws.
+ */
+export async function fetchNewsContext(keywords: string | string[]): Promise<NewsContext> {
   const query = toGdeltAnyQuery(typeof keywords === 'string' ? [keywords] : keywords);
   if (!query) {
     return { status: 'skipped', query: null, articles: [], summary: 'Tidak ada kata kunci berita untuk tren ini.' };
   }
-  return fetchArticles(query, MAX_ARTICLES, 'datedesc');
+  const gdelt = await fetchArticles(query, MAX_ARTICLES, 'datedesc', TIMEOUT_MS);
+  if (gdelt.status === 'ok') return gdelt;
+
+  const found = await searchGoogleNews(query, MAX_ARTICLES);
+  // Google failed too: GDELT's note says why there is no news
+  if (!found) return gdelt;
+  const articles = found.map((article) => ({ domain: article.outlet, title: article.title, url: article.url, seenAt: article.publishedAt }));
+  return articles.length
+    ? { status: 'ok', provider: 'google_news', query, articles, summary: formatSummary(articles) }
+    : { status: 'empty', provider: 'google_news', query, articles, summary: 'Tidak ada liputan berita untuk kata kunci ini dalam 24 jam terakhir.' };
 }
 
 /** The most relevant Indonesian news of the last 24 hours, for the daily cycle. */
 export function fetchIndonesiaHeadlines(maxArticles = 15): Promise<NewsContext> {
-  return fetchArticles('sourcecountry:indonesia', maxArticles, 'hybridrel');
+  return fetchArticles('sourcecountry:indonesia', maxArticles, 'hybridrel', CYCLE_TIMEOUT_MS);
 }
 
-async function fetchArticles(query: string, maxArticles: number, sort: 'datedesc' | 'hybridrel'): Promise<NewsContext> {
+async function fetchArticles(
+  query: string,
+  maxArticles: number,
+  sort: 'datedesc' | 'hybridrel',
+  timeoutMs: number,
+): Promise<NewsContext> {
   const cacheKey = `${query}:${maxArticles}:${sort}`;
   const cached = cache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.context;
@@ -151,12 +185,17 @@ async function fetchArticles(query: string, maxArticles: number, sort: 'datedesc
       // Cached in memory below instead of the Next data cache, which could
       // also keep a 429 body for the full hour
       cache: 'no-store',
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     status = response.status;
     // Raw text first: errors arrive as plain text, not JSON
     text = await response.text();
-  } catch {
+  } catch (error) {
+    // The cause tells a timeout (TimeoutError) from a refused or slow connection (UND_ERR_CONNECT_TIMEOUT)
+    console.error('GDELT failed', error instanceof Error ? ((error.cause as { code?: string } | undefined)?.code ?? error.name) : error);
+    // An unreachable GDELT stays unreachable for a while: back off as after a
+    // 429, so the next lookups go straight to Google News instead of waiting
+    coolDownUntil = Date.now() + COOLDOWN_AFTER_429_MS;
     return { status: 'error', query, articles: [], summary: 'Konteks berita tidak bisa diambil saat ini.' };
   }
 

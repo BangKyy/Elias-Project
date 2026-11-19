@@ -4,7 +4,8 @@ import { isCreativeRole } from '@/lib/creativeRoles';
 import { dedupe, getCachedInsight, refundUserBudget, setCachedInsight, takeUserBudget } from '@/lib/elias/cache';
 import { executionBrief } from '@/lib/elias/brief';
 import { generateInsight, type GenerateResult } from '@/lib/elias/openrouter';
-import { fetchGdeltNewsContext, type NewsContext } from '@/lib/gdelt';
+import { fetchNewsContext, type NewsContext } from '@/lib/gdelt';
+import { fetchGitHubTrends, isTechAdjacent } from '@/lib/github';
 import { fetchYouTubeTrends, type YouTubeTrends } from '@/lib/youtube';
 import {
   executionFormatLabels,
@@ -113,7 +114,8 @@ function parseTrendDetails(value: unknown): TrendDetails | undefined {
     .slice(0, MAX_EVIDENCE)
     .map((item) => ({ title: clip(item.title, 200), detail: clip(item.detail, 120) }));
   return {
-    source: clip(d.source, 40),
+    // Every source of the card, "YouTube, Google Trends, Media Indonesia"
+    source: clip(d.source, 120),
     observedOn: clip(d.observedOn, 10),
     tags: d.tags.slice(0, MAX_TAGS).map((tag) => clip(tag, MAX_KEYWORD_LENGTH)).filter(Boolean),
     lifecycle: d.lifecycle ? clip(d.lifecycle, 300) : null,
@@ -148,7 +150,7 @@ function parseRequest(body: unknown): InsightRequest | null {
 
 /**
  * POST { brandContext, trendTopic, userRole, trendDetails?, newsKeywords? } → role-tailored
- * call on one trend, grounded on the last 24 hours of GDELT news and today's
+ * call on one trend, grounded on the last 24 hours of news (GDELT, else Google News) and today's
  * YouTube Indonesia trending chart.
  * Signed-in only: the free tier allows 50 requests a day for the whole app.
  */
@@ -192,11 +194,13 @@ export async function POST(request: Request) {
     // Neither source can fail the call: problems come back as a status the
     // prompt and the card both handle
     const keywords = newsKeywordsFor(insightRequest);
-    const [news, youtube] = await Promise.all([
-      keywords.length ? fetchGdeltNewsContext(keywords) : Promise.resolve(skippedNews),
+    // GitHub only grounds brands that build on, sell or teach software
+    const [news, youtube, github] = await Promise.all([
+      keywords.length ? fetchNewsContext(keywords) : Promise.resolve(skippedNews),
       fetchYouTubeTrends('ID', 3),
+      isTechAdjacent(insightRequest.brandContext.category) ? fetchGitHubTrends() : Promise.resolve(null),
     ]);
-    const generated = await generateInsight(insightRequest, news, youtube);
+    const generated = await generateInsight(insightRequest, news, youtube, github);
     if (generated.ok) await setCachedInsight(key, generated.insight, generated.model, news, youtube);
     // Rejected before reaching a model: don't count it against the user
     else if (generated.status === 429 || generated.status === 503) await refundUserBudget(user.id, budget);

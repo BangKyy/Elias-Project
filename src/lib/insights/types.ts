@@ -5,7 +5,7 @@ import type { CreativeRole } from '../creativeRoles';
  * Sources Elias can actually query (PRD Ch. 9). TikTok and Instagram are
  * deliberately absent: no card may imply coverage of them (BR-5, DS-3).
  */
-export type SourceId = 'google_trends' | 'youtube' | 'gdelt' | 'news' | 'wikipedia' | 'reddit' | 'x';
+export type SourceId = 'google_trends' | 'youtube' | 'gdelt' | 'news' | 'wikipedia' | 'github' | 'reddit' | 'x';
 
 export const sources: Record<SourceId, { label: string; tier: 1 | 2 }> = {
   google_trends: { label: 'Google Trends', tier: 1 },
@@ -15,6 +15,8 @@ export const sources: Record<SourceId, { label: string; tier: 1 | 2 }> = {
   news: { label: 'Media Indonesia', tier: 1 },
   // The most-read Indonesian Wikipedia articles (src/lib/wikimedia.ts)
   wikipedia: { label: 'Wikipedia', tier: 1 },
+  // The week's most-starred new repositories (src/lib/github.ts), for tech-adjacent brands
+  github: { label: 'GitHub', tier: 1 },
   reddit: { label: 'Reddit', tier: 2 },
   x: { label: 'X', tier: 2 },
 };
@@ -28,7 +30,30 @@ export type Evidence = {
   url: string;
   /** Channel or domain, plus the view count for videos */
   detail: string;
+  /** Where the item came from; absent on cards stored before 19 Nov 2026 */
+  source?: SourceId;
 };
+
+/** The source of an item stored without one, told by its link. */
+function sourceOfUrl(url: string): SourceId {
+  const host = URL.canParse(url) ? new URL(url).hostname.replace(/^www\./, '') : '';
+  if (host === 'youtube.com' || host === 'youtu.be') return 'youtube';
+  if (host === 'trends.google.com') return 'google_trends';
+  if (host.endsWith('wikipedia.org')) return 'wikipedia';
+  if (host === 'github.com') return 'github';
+  if (host === 'reddit.com') return 'reddit';
+  return 'news';
+}
+
+/**
+ * Every source a card rests on, its main one first. The main source is only
+ * the majority of the evidence, so a YouTube card may also cite searches,
+ * Wikipedia or news.
+ */
+export function cardSources(insight: Insight): SourceId[] {
+  const cited = (insight.evidence ?? []).map((item) => item.source ?? sourceOfUrl(item.url));
+  return [...new Set([insight.source, ...cited])];
+}
 
 /**
  * Minimum card anatomy from BR-2: signal, source, role-flavoured

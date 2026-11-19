@@ -3,7 +3,7 @@ import { archetypeDirections } from '@/lib/archetypes';
 import { creativeRoleLabels, type CreativeRole } from '@/lib/creativeRoles';
 import { formatDate } from '@/lib/dates';
 import type { BrandContext } from '@/lib/elias/types';
-import { sources, type Evidence, type Insight } from '@/lib/insights/types';
+import { cardSources, sources, type Evidence, type Insight } from '@/lib/insights/types';
 import MotionText from '../motion/MotionText';
 import ScrollReveal from '../motion/ScrollReveal';
 import EliasTrendCard from './EliasTrendCard';
@@ -65,7 +65,11 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
         <div data-reveal className="absolute top-5 -left-2 flex max-w-[calc(100%+0.5rem)] items-start gap-2.5">
           <VerdictTab verdict={insight.verdict} />
           <ul aria-label="Sumber dan kategori" className="flex min-w-0 flex-wrap gap-[5px]">
-            <li className={tag}>{sources[insight.source].label}</li>
+            {cardSources(insight).map((source) => (
+              <li key={source} className={tag}>
+                {sources[source].label}
+              </li>
+            ))}
             <li className={tag}>{insight.category}</li>
           </ul>
         </div>

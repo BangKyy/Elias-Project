@@ -1,5 +1,6 @@
 import { brandCategoryLabels, type BrandCategory } from '../brandCategories';
 import { fetchYouTubeTrends, type YouTubeVideo } from '../youtube';
+import { captureCharts } from './live';
 import { captureSearchTrends, storedSearchTrends, type CapturedSearch } from './searchTrends';
 import { readStoredCharts } from './snapshots';
 import { topicsOf } from './topics';
@@ -23,6 +24,8 @@ const MAX_TOPICS = 8;
 const CACHE_MS = 15 * 60_000;
 // A refresh may capture Google's feed sooner than the hourly capture, but not on every press
 const REFRESH_CAPTURE_MS = 10 * 60_000;
+// A day without stored charts is captured again at most this often
+const REPAIR_INTERVAL_MS = 30 * 60_000;
 const REGION = 'ID';
 // Same size as the cycle's charts, so both share fetchYouTubeTrends' cache
 const CHART_SIZE = 50;
@@ -96,17 +99,41 @@ function toTopics(videos: YouTubeVideo[]): TrendingTopic[] {
 }
 
 // On globalThis so dev-server reloads keep it
-const store = globalThis as typeof globalThis & { eliasTrending?: { value: Trending; expiresAt: number } };
+const store = globalThis as typeof globalThis & {
+  eliasTrending?: { value: Trending; expiresAt: number };
+  eliasChartRepair?: { date: string; at: number };
+};
+
+/**
+ * Today's stored chart videos, capturing them when none are stored yet (at
+ * most every REPAIR_INTERVAL_MS). The cycle stores them once a day, so a save
+ * that failed left the day without charts until the next day (19 Nov 2026: an
+ * emoji cut in half was rejected by Postgres).
+ */
+async function todaysChartVideos(date: string): Promise<YouTubeVideo[]> {
+  const stored = await readStoredCharts(date);
+  if (stored.size) return [...stored.values()].flat();
+  const repair = store.eliasChartRepair;
+  if (repair?.date === date && Date.now() - repair.at < REPAIR_INTERVAL_MS) return [];
+  store.eliasChartRepair = { date, at: Date.now() };
+  console.warn('Trending: no charts stored for', date, 'so capturing them now');
+  const captured = await captureCharts(date);
+  // Read back what was saved; without the secret key nothing is, so use the capture itself
+  const saved = await readStoredCharts(date);
+  return saved.size
+    ? [...saved.values()].flat()
+    : captured.flatMap(({ trends }) => (trends.status === 'ok' ? trends.videos : []));
+}
 
 /** Today's trending searches and YouTube topics, cached for a few minutes. */
 export async function getTrending(date: string): Promise<Trending> {
   const cached = store.eliasTrending;
   if (cached?.value.date === date && Date.now() < cached.expiresAt) return cached.value;
-  const [searches, charts] = await Promise.all([storedSearchTrends(date), readStoredCharts(date)]);
+  const [searches, videos] = await Promise.all([storedSearchTrends(date), todaysChartVideos(date)]);
   const value: Trending = {
     date,
     searches: toSearches(searches),
-    topics: toTopics([...charts.values()].flat()),
+    topics: toTopics(videos),
     readAt: new Date().toISOString(),
   };
   // An empty read (no secret key, or nothing stored yet) is retried on the next view

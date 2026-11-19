@@ -6,6 +6,9 @@ import type { YouTubeTrends, YouTubeVideo } from '../youtube';
 export type { NewsArticle, NewsContext } from '../gdelt';
 export type { YouTubeTrends, YouTubeVideo } from '../youtube';
 
+/** "GDELT" or "Google News", for prompts and briefings. Here, not in ../gdelt, so the client bundle stays free of it. */
+export const newsProviderLabel = (news: NewsContext) => (news.provider === 'google_news' ? 'Google News' : 'GDELT');
+
 /**
  * What Elias knows about the brand. `id` is the cache and ownership key; it
  * is the user id until brand_profile exists, then becomes brand_profile_id
@@ -144,7 +147,7 @@ export type InsightResponse =
       /** General YouTube trending chart for the region, not videos about the trend */
       youtube: YouTubeTrends;
       // Flat fields for consumers that want the call without the structure
-      /** The "1. [domain] Title" lines when GDELT returned articles, else null */
+      /** The "1. [outlet] Title" lines when GDELT or Google News returned articles, else null */
       gdeltSource: string | null;
       youtubeData: YouTubeVideo[];
       /** WATCH is the PRD's "Pantau": too early or too risky to call */

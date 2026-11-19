@@ -1,12 +1,18 @@
+import { truncate } from './text';
+
 // Indonesian news and industry media from public RSS feeds, aggregated here.
 // Server only.
 //
-// As checked on 6 Nov 2026: Antara, CNN Indonesia, detikNews, CNBC Indonesia,
-// Republika and Tempo serve RSS 2.0 directly. Marketeers, MIX and SWA serve
-// no feed to non-browsers, so they come through Google News' own aggregator
-// (a `site:` search feed), whose links redirect through news.google.com.
-// Kompas, Liputan6, Kumparan, Suara, IDN Times, Kontan and Bisnis answered no
-// usable feed.
+// As checked on 6 Nov 2026: Antara, CNN Indonesia, detikNews, CNBC Indonesia
+// and Republika serve RSS 2.0 directly. Marketeers, MIX and SWA serve no feed
+// to non-browsers, so they come through Google News' own aggregator (a `site:`
+// search feed), whose links redirect through news.google.com.
+//
+// Since 19 Nov 2026 the outlets with no usable feed of their own (Kompas,
+// Liputan6, Kumparan, IDN Times, Suara, Kontan, Bisnis) come the same way, and
+// so does Tempo, whose own feed had stopped on 15 Nov. One search per outlet:
+// "site:a OR site:b" answered 100 items from the first site only. Google's
+// top stories feed was tried and left out: stale items and gambling spam.
 //
 // None of this may hold the cycle up: every feed is fetched in parallel with
 // its own timeout, a failed feed is skipped and the rest still count, and
@@ -15,7 +21,7 @@
 const CACHE_TTL_MS = 3_600_000;
 const TIMEOUT_MS = 8_000;
 const USER_AGENT = 'web:elias-trends:0.1 (daily trend research for Indonesian creative teams)';
-const MAX_LOCAL = 15;
+const MAX_LOCAL = 20;
 const MAX_INDUSTRY = 12;
 // Industry media publish less often than daily news
 const LOCAL_WINDOW_MS = 24 * 3_600_000;
@@ -24,14 +30,24 @@ const INDUSTRY_WINDOW_MS = 48 * 3_600_000;
 export type FeedKind = 'local' | 'industry';
 
 type Feed = {
-  /** Outlet name; Google News items name their own outlet instead */
+  /** Outlet name; Google News items name their own outlet instead, unless `named` */
   outlet: string;
   url: string;
   kind: FeedKind;
+  /** Keep `outlet` for Google News items too, so "IDN Times Bali" counts as IDN Times */
+  named?: boolean;
 };
 
 const googleNews = (query: string) =>
   `https://news.google.com/rss/search?${new URLSearchParams({ q: query, hl: 'id', gl: 'ID', ceid: 'ID:id' })}`;
+
+/** One outlet through Google News, for outlets with no usable feed of their own. */
+const viaGoogle = (outlet: string, site: string, kind: FeedKind, window = '1d'): Feed => ({
+  outlet,
+  url: googleNews(`site:${site} when:${window}`),
+  kind,
+  named: true,
+});
 
 const feeds: Feed[] = [
   { outlet: 'Antara', url: 'https://www.antaranews.com/rss/terkini.xml', kind: 'local' },
@@ -39,8 +55,17 @@ const feeds: Feed[] = [
   { outlet: 'detikNews', url: 'https://news.detik.com/rss', kind: 'local' },
   { outlet: 'CNBC Indonesia', url: 'https://www.cnbcindonesia.com/news/rss', kind: 'local' },
   { outlet: 'Republika', url: 'https://www.republika.co.id/rss', kind: 'local' },
-  { outlet: 'Tempo', url: 'https://rss.tempo.co/nasional', kind: 'local' },
-  { outlet: 'Google News', url: googleNews('site:marketeers.com OR site:mix.co.id OR site:swa.co.id when:2d'), kind: 'industry' },
+  viaGoogle('Tempo', 'tempo.co', 'local'),
+  viaGoogle('Kompas', 'kompas.com', 'local'),
+  viaGoogle('Liputan6', 'liputan6.com', 'local'),
+  viaGoogle('Kumparan', 'kumparan.com', 'local'),
+  viaGoogle('IDN Times', 'idntimes.com', 'local'),
+  viaGoogle('Suara', 'suara.com', 'local'),
+  viaGoogle('Kontan', 'kontan.co.id', 'local'),
+  viaGoogle('Bisnis', 'bisnis.com', 'local'),
+  viaGoogle('Marketeers', 'marketeers.com', 'industry', '2d'),
+  viaGoogle('MIX Marcomm', 'mix.co.id', 'industry', '2d'),
+  viaGoogle('SWA', 'swa.co.id', 'industry', '2d'),
   { outlet: 'CNBC Indonesia Tech', url: 'https://www.cnbcindonesia.com/tech/rss', kind: 'industry' },
   { outlet: 'CNBC Indonesia Lifestyle', url: 'https://www.cnbcindonesia.com/lifestyle/rss', kind: 'industry' },
   { outlet: 'DailySocial', url: 'https://dailysocial.id/feed', kind: 'industry' },
@@ -96,7 +121,7 @@ export function parseFeed(xml: string, feed: Feed): FeedArticle[] | null {
     // Google News names the outlet in <source> and repeats it after the title
     const source = text(item, 'source');
     if (source) {
-      outlet = source;
+      if (!feed.named) outlet = source;
       if (title.endsWith(` - ${source}`)) title = title.slice(0, -source.length - 3);
     }
     // Rendered as links, so only plain web URLs get through
@@ -104,12 +129,12 @@ export function parseFeed(xml: string, feed: Feed): FeedArticle[] | null {
     const summary = source ? '' : text(item, 'description');
     return [
       {
-        title: title.slice(0, 200),
+        title: truncate(title, 200),
         url,
-        outlet: outlet.slice(0, 60),
+        outlet: truncate(outlet, 60),
         kind: feed.kind,
         publishedAt: new Date(published).toISOString(),
-        summary: summary === title ? '' : summary.slice(0, 200),
+        summary: summary === title ? '' : truncate(summary, 200),
       },
     ];
   });
@@ -175,6 +200,16 @@ function pick(articles: FeedArticle[], max: number, windowMs: number): FeedArtic
     for (const queue of queues) if (queue[round] && picked.length < max) picked.push(queue[round]);
   }
   return picked;
+}
+
+/**
+ * Google News' newest articles of the last day for a query, which takes
+ * Google's syntax ("(matcha OR "es teh")"); null when the feed failed. The
+ * backup for GDELT's keyword news (./gdelt), cached an hour like every feed.
+ */
+export async function searchGoogleNews(query: string, max: number): Promise<FeedArticle[] | null> {
+  const articles = await readFeed({ outlet: 'Google News', url: googleNews(`${query} when:1d`), kind: 'local' });
+  return articles && [...articles].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, max);
 }
 
 /** The last day's local news and the last two days' industry media. Never throws. */

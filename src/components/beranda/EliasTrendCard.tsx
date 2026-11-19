@@ -18,7 +18,7 @@ import {
   type NewsContext,
   type YouTubeTrends,
 } from '@/lib/elias/types';
-import { sources, type Insight } from '@/lib/insights/types';
+import { cardSources, sources, type Insight } from '@/lib/insights/types';
 
 type EliasTrendCardProps = {
   insight: Insight;
@@ -58,7 +58,9 @@ export default function EliasTrendCard({ insight, brandContext, userRole }: Elia
     trendTopic: insight.signal,
     userRole,
     trendDetails: {
-      source: sources[insight.source].label,
+      source: cardSources(insight)
+        .map((source) => sources[source].label)
+        .join(', '),
       observedOn: insight.observedOn,
       tags: insight.tags,
       lifecycle: insight.lifecycle ?? null,

@@ -8,7 +8,7 @@ import { briefingEmailHtml } from '@/lib/elias/briefingEmail';
 import { refundUserBudget, takeUserBudget } from '@/lib/elias/cache';
 import { generateInsight } from '@/lib/elias/openrouter';
 import type { InsightRequest } from '@/lib/elias/types';
-import { fetchGdeltNewsContext } from '@/lib/gdelt';
+import { fetchNewsContext } from '@/lib/gdelt';
 import { createClient } from '@/lib/supabase/server';
 import { fetchYouTubeTrends } from '@/lib/youtube';
 
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   if (!budget.allowed) return fail(429, 'Jatah analisis kamu untuk hari ini sudah habis.');
 
   // Neither source can fail the run: problems come back as a status the prompt handles
-  const [news, youtube] = await Promise.all([fetchGdeltNewsContext(input.targetTopic), fetchYouTubeTrends('ID', 3)]);
+  const [news, youtube] = await Promise.all([fetchNewsContext(input.targetTopic), fetchYouTubeTrends('ID', 3)]);
   const generated = await generateInsight(insightRequest, news, youtube);
   if (!generated.ok) {
     if (generated.status === 429 || generated.status === 503) await refundUserBudget(user.id, budget);

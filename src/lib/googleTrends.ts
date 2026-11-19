@@ -1,3 +1,5 @@
+import { truncate } from './text';
+
 // Google Trends "Trending now" for a country, from Google's public RSS feed.
 // Server only.
 //
@@ -75,10 +77,10 @@ export function parseFeed(xml: string): SearchTrend[] | null {
       // Rendered as links, so only plain web URLs get through
       .filter((article) => article.title && /^https?:\/\//i.test(article.url))
       .slice(0, MAX_NEWS)
-      .map((article) => ({ ...article, title: article.title.slice(0, 200) }));
+      .map((article) => ({ ...article, title: truncate(article.title, 200) }));
     return [
       {
-        term: term.slice(0, 100),
+        term: truncate(term, 100),
         approxTraffic: parseTraffic(tagText(item, 'ht:approx_traffic')),
         startedAt: Number.isNaN(started) ? null : new Date(started).toISOString(),
         news,
