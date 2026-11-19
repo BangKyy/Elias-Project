@@ -22,7 +22,7 @@ const PACE_S = 30;
 // the per-role calls. Timed for a typical day, not tied to the real stages.
 // `parts` are read in turn, the current one highlighted
 const stages = [
-  { from: 0, lead: 'Sedang mengumpulkan sumber dari', parts: ['YouTube', 'Google', 'Reddit', 'berita'] },
+  { from: 0, lead: 'Sedang mengumpulkan sumber dari', parts: ['YouTube', 'Google', 'Reddit', 'Wikipedia', 'berita'] },
   { from: 10, lead: 'Sedang memilih', parts: ['tren yang relevan untuk hari ini'] },
   { from: 45, lead: 'Sedang menyusun', parts: ['rekomendasi untuk tiap peran'] },
 ];

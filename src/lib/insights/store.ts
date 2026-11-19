@@ -82,6 +82,9 @@ const missingColumn = (error: { code?: string } | null) => error?.code === '4270
 // rejects "news": those cards are saved under GDELT, the other news source,
 // rather than losing the day and spending quota on generating it again
 const NEWS_MIGRATION = '20261106090000_insight_news_source.sql';
+// Likewise "wikipedia" until 20261119090000_insight_wikipedia_source.sql: saved
+// under Google Trends, the other what-people-looked-up source
+const WIKIPEDIA_MIGRATION = '20261119090000_insight_wikipedia_source.sql';
 const checkViolation = (error: { code?: string } | null) => error?.code === '23514';
 
 function readCards(supabase: SupabaseClient, from: string, columns: string) {
@@ -167,9 +170,17 @@ export async function saveCycle(date: string, insights: Insight[]): Promise<void
     tagged = false;
     ({ error: cardsError } = await insertCards(rows));
   }
-  if (checkViolation(cardsError) && rows.some((row) => row.source === 'news')) {
+  // The newer migration also allows "news", so Wikipedia is tried first
+  let sourced = rows;
+  if (checkViolation(cardsError) && sourced.some((row) => row.source === 'wikipedia')) {
+    console.warn(`Insight store: saving Wikipedia cards as Google Trends; apply ${WIKIPEDIA_MIGRATION}`);
+    sourced = sourced.map((row) => (row.source === 'wikipedia' ? { ...row, source: 'google_trends' } : row));
+    ({ error: cardsError } = await insertCards(sourced));
+  }
+  if (checkViolation(cardsError) && sourced.some((row) => row.source === 'news')) {
     console.warn(`Insight store: saving Media Indonesia cards as GDELT; apply ${NEWS_MIGRATION}`);
-    ({ error: cardsError } = await insertCards(rows.map((row) => (row.source === 'news' ? { ...row, source: 'gdelt' } : row))));
+    sourced = sourced.map((row) => (row.source === 'news' ? { ...row, source: 'gdelt' } : row));
+    ({ error: cardsError } = await insertCards(sourced));
   }
   if (cardsError) {
     console.error('Insight store: saving the cards failed', cardsError);
