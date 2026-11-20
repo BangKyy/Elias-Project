@@ -43,6 +43,13 @@
   --color-success-strong: #1f7a45;
   --color-warning: #b45309;
   --color-warning-surface: #fdf3e1;
+  /* Arsip status labels: feedback/warning default and its surfaces, for
+     "Sedang dikerjakan" and "Menengah" (Status Labels, Figma 516:13051/13052) */
+  --color-warning-default: #d08700;
+  --color-warning-tint: #fff6d8;
+  --color-yellow-50: #fefce8;
+  /* Warning/Main: border of the open Dropdown/Eksekusi on "Sedang dikerjakan" */
+  --color-warning-main: #ffd33c;
 
   --color-neutral-80: #383838;
   --color-neutral-100: #f5f5f5;
@@ -51,6 +58,10 @@
   --color-neutral-500: #737373;
   --color-neutral-600: #525252;
   --color-neutral-700: #404040;
+  /* Colors/Neutral/300: the join date in the header's account panel */
+  --color-gray-300: #b4b1af;
+  /* Days outside the shown month in Arsip's date range calendar */
+  --color-gray-400: #b3b3b3;
   --color-gray-500: #7f7d7d;
   --color-gray-600: #666465;
 
@@ -91,6 +102,8 @@
   --shadow-card: 0 0 3px 0 rgb(12 11 16 / 0.1);
   /* The app header once the page scrolls under it */
   --shadow-header: 0 1px 2px 0 rgb(12 11 16 / 0.04), 0 4px 16px -4px rgb(12 11 16 / 0.08);
+  /* Shadow/lg: the header's open mobile menu */
+  --shadow-menu: 0 12px 16px -4px rgb(0 0 0 / 0.08), 0 4px 6px -2px rgb(0 0 0 / 0.03);
 
   /* Beranda's backdrop: slow enough to read as ambience, never as movement to follow */
   --animate-backdrop-spin: backdrop-spin 240s linear infinite;

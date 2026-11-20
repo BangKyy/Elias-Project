@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from 'react';
-import type { Insight, SourceId } from './insights/types';
+import type { Insight, SourceId, Verdict } from './insights/types';
 
 // Saved trends live on this device for now (AR-8). Account holders move to the
 // database, keyed to brand_profile_id, with the data model work (docs/MVP.md,
@@ -34,6 +34,8 @@ export type ArchivedTrend = {
   title: string;
   source: SourceId;
   category: string;
+  /** The card's verdict when saved; absent on entries saved before 20 Nov 2026 */
+  verdict?: Verdict;
   tags: string[];
   /** When the source observed the movement */
   observedOn: string;
@@ -156,6 +158,7 @@ export function useArchive() {
             title: insight.signal,
             source: insight.source,
             category: insight.category,
+            verdict: insight.verdict,
             tags: insight.tags,
             observedOn: insight.observedOn,
             savedAt: now,

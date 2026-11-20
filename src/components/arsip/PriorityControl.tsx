@@ -1,18 +1,24 @@
 'use client';
 
-import { CaretDown, Flag } from '@phosphor-icons/react';
 import { priorityLabels, type ArchivePriority } from '@/lib/archive';
+import LabelSelect from './LabelSelect';
 
-// A square-cornered outline keeps it visibly separate from the round status
-// badge; the two are never merged into one chip (AR-4)
-const box =
-  'relative inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-semibold transition focus-within:ring-2 focus-within:ring-txt-black focus-within:ring-offset-2';
+// Text colour, the "Actived" (selected) background per Status Labels/Priority,
+// and the Dropdown/Prioritas trigger while open on that priority
+const styles: Record<ArchivePriority | 'none', { tone: string; surface: string; openTrigger: string }> = {
+  none: { tone: 'text-disabled-content', surface: 'bg-disabled-surface', openTrigger: 'border-disabled-surface' },
+  low: { tone: 'text-success-content', surface: 'bg-green-50', openTrigger: 'border-success-content bg-green-50' },
+  medium: { tone: 'text-warning-default', surface: 'bg-yellow-50', openTrigger: 'border-warning-default bg-yellow-50' },
+  high: { tone: 'text-primary', surface: 'bg-primary-surface', openTrigger: 'border-primary bg-primary-surface' },
+};
 
-const weights: Record<ArchivePriority, 'fill' | 'duotone' | 'regular'> = { high: 'fill', medium: 'duotone', low: 'regular' };
-
-function label(priority: ArchivePriority | null) {
-  return priority ? `Prioritas ${priorityLabels[priority]}` : 'Tanpa prioritas';
-}
+// Lowest first, as the design lists them
+const options = (['none', 'low', 'medium', 'high'] as const).map((value) => ({
+  value,
+  label: value === 'none' ? 'Tanpa prioritas' : priorityLabels[value],
+  ...styles[value],
+  unset: value === 'none',
+}));
 
 /**
  * Visible to everyone; editable only by account holders (AR-3). Guests get
@@ -31,41 +37,13 @@ export default function PriorityControl({
   onChange: (priority: ArchivePriority | null) => void;
   onLocked: () => void;
 }) {
-  const tone = priority === 'high' ? 'border-primary-border text-primary' : 'border-disabled-surface text-neutral-700';
-  const icon = <Flag size={16} weight={priority ? weights[priority] : 'regular'} aria-hidden />;
-
-  if (!editable) {
-    return (
-      <button
-        type="button"
-        onClick={onLocked}
-        aria-label={`${label(priority)}. Ubah prioritas: ${itemTitle}`}
-        className={`${box} ${tone} hover:border-txt-black`}
-      >
-        {icon}
-        {label(priority)}
-      </button>
-    );
-  }
-
   return (
-    <span className={`${box} ${tone} hover:border-txt-black`}>
-      {icon}
-      {label(priority)}
-      <CaretDown size={14} aria-hidden />
-      <select
-        aria-label={`Prioritas: ${itemTitle}`}
-        value={priority ?? ''}
-        onChange={(e) => onChange((e.target.value || null) as ArchivePriority | null)}
-        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
-      >
-        <option value="">Tanpa prioritas</option>
-        {(Object.keys(priorityLabels) as ArchivePriority[]).map((value) => (
-          <option key={value} value={value}>
-            {priorityLabels[value]}
-          </option>
-        ))}
-      </select>
-    </span>
+    <LabelSelect
+      label={`Prioritas: ${itemTitle}`}
+      value={priority ?? 'none'}
+      options={options}
+      onChange={(value) => onChange(value === 'none' ? null : value)}
+      onLocked={editable ? undefined : onLocked}
+    />
   );
 }

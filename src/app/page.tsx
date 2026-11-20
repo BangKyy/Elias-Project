@@ -20,7 +20,7 @@ import { verdicts } from '@/components/beranda/VerdictTab';
 import { archetypeDirections } from '@/lib/archetypes';
 import { brandCategoryLabels, isBrandCategory } from '@/lib/brandCategories';
 import { creativeRoleFor, creativeRoleLabels } from '@/lib/creativeRoles';
-import { daysBefore, formatDate } from '@/lib/dates';
+import { formatDate } from '@/lib/dates';
 import { brandContextFor, fetchProfile } from '@/lib/elias/brandProfile';
 import { fitsBrand, rankForAudience } from '@/lib/insights/brandFit';
 import { feedPage, feedPageSize, groupByDay, mobileFeedPageSize } from '@/lib/insights/feed';
@@ -28,6 +28,7 @@ import { getRecentFeed } from '@/lib/insights/live';
 import { getTrending } from '@/lib/insights/trending';
 import type { StoredCard } from '@/lib/insights/store';
 import { sources, type Verdict } from '@/lib/insights/types';
+import { headerAccount } from '@/lib/headerAccount';
 import { createClient } from '@/lib/supabase/server';
 import { isAudienceMarket, targetMarketLabel } from '@/lib/targetMarkets';
 
@@ -41,12 +42,10 @@ function headline(today: number, total: number, scoped: boolean): { text: string
   return { text: `Terdapat ${accent} ${scoped ? 'yang Cocok untuk Brand Kamu.' : 'untuk Kamu Pantau.'}`, accent };
 }
 
-/** "Hari ini - Jumat, 13 November 2026", "Kemarin - …", or the date for the older days of the window. */
+/** "Hari ini - Jumat, 13 November 2026" for today; just the date for every earlier day of the window. */
 function dayLabel(date: string, today: string): string {
   const full = formatDate(date, { weekday: 'long' });
-  if (date === today) return `Hari ini - ${full}`;
-  if (date === daysBefore(today, 1)) return `Kemarin - ${full}`;
-  return full;
+  return date === today ? `Hari ini - ${full}` : full;
 }
 
 // `/?status=eksekusi`: the verdicts by the names on their tabs
@@ -199,7 +198,7 @@ async function Beranda({ searchParams, user }: { searchParams: SearchParams; use
   const cycleChip = 'bg-primary px-3 py-2 font-mono text-sm font-bold text-txt-white uppercase md:px-6 md:py-3 md:text-md';
 
   return (
-    <AppShell userId={user?.id ?? null} backdrop={<BerandaBackdrop />}>
+    <AppShell userId={user?.id ?? null} account={await headerAccount(supabase, user)} backdrop={<BerandaBackdrop />}>
       <div className="flex flex-col gap-8">
         <section data-animate="page-item" className="flex flex-col items-start gap-[18px]">
           <p className="flex flex-wrap gap-3">

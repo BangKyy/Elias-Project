@@ -175,35 +175,54 @@ export function BrandSection({ userId, profile }: SectionProps) {
   );
 }
 
-/** Goals (PR-2), the morning email time and Always On (PR-5). */
-export function PreferencesSection({ userId, profile }: SectionProps) {
-  const form = useProfileForm(
-    userId,
-    {
-      goals: profile.goals.filter((goal) => goalOptions.includes(goal)),
-      // Postgres returns time as HH:MM:SS
-      notificationTime: known(notificationTimeOptions, profile.notification_time?.slice(0, 5) ?? null),
-      alwaysOn: (isAlwaysOn(profile.always_on) ? profile.always_on : DEFAULT_ALWAYS_ON) as AlwaysOn,
-    },
-    ({ goals, notificationTime, alwaysOn }) => ({ goals, notification_time: notificationTime, always_on: alwaysOn }),
-  );
+/** Goals (PR-2): they steer what Elias recommends. */
+export function GoalsSection({ userId, profile }: SectionProps) {
+  const form = useProfileForm(userId, { goals: profile.goals.filter((goal) => goalOptions.includes(goal)) }, ({ goals }) => ({ goals }));
   const { values, set } = form;
 
   return (
-    <ProfileSection
-      id="preferensi"
-      title="Tujuan & Notifikasi"
-      description="Tujuan utama mengarahkan rekomendasi Elias. Jam dan Always On mengatur kapan email pagi dikirim."
-    >
+    <ProfileSection id="tujuan" title="Tujuan" description="Tujuan utama mengarahkan rekomendasi Elias untuk brand kamu.">
       <SectionForm
         dirty={form.dirty}
-        canSave={values.goals.length > 0 && values.notificationTime !== ''}
+        canSave={values.goals.length > 0}
         saving={form.saving}
         status={form.status}
         onSubmit={form.save}
         onReset={form.reset}
       >
         <GoalsPicker selected={values.goals} onChange={(goals) => set('goals', goals)} />
+      </SectionForm>
+    </ProfileSection>
+  );
+}
+
+/** The morning email time and Always On (PR-5), on /profil/notifikasi. */
+export function NotificationSection({ userId, profile }: SectionProps) {
+  const form = useProfileForm(
+    userId,
+    {
+      // Postgres returns time as HH:MM:SS
+      notificationTime: known(notificationTimeOptions, profile.notification_time?.slice(0, 5) ?? null),
+      alwaysOn: (isAlwaysOn(profile.always_on) ? profile.always_on : DEFAULT_ALWAYS_ON) as AlwaysOn,
+    },
+    ({ notificationTime, alwaysOn }) => ({ notification_time: notificationTime, always_on: alwaysOn }),
+  );
+  const { values, set } = form;
+
+  return (
+    <ProfileSection
+      id="email-pagi"
+      title="Email Pagi"
+      description="Jam dan Always On mengatur kapan email pagi dari Elias dikirim."
+    >
+      <SectionForm
+        dirty={form.dirty}
+        canSave={values.notificationTime !== ''}
+        saving={form.saving}
+        status={form.status}
+        onSubmit={form.save}
+        onReset={form.reset}
+      >
         <DropdownField
           icon={CalendarStar}
           label="Jam Email Pagi"

@@ -1,0 +1,171 @@
+import Link from 'next/link';
+import { LEGAL_OPERATOR } from '@/lib/legal';
+import { ContactLink, List, P, type LegalSection } from './LegalPage';
+
+export const termsSummary = [
+  <>Elias membaca tren dari <strong>sumber publik</strong> dan memakai <strong>model AI</strong> untuk menyarankan apa yang bisa brand kamu lakukan. Saran itu bisa keliru, jadi periksa dulu sebelum dipublikasikan.</>,
+  <>Akun dibuat dengan <strong>email dan kata sandi</strong>. Kamu bisa menghapusnya kapan saja dari halaman Profil.</>,
+  <>Arsip tersimpan <strong>di browser perangkat yang kamu pakai</strong>, bukan di server kami, dan hilang bila data browser dihapus.</>,
+  <>Syarat ini tunduk pada <strong>hukum Republik Indonesia</strong>.</>,
+];
+
+export const termsSections: LegalSection[] = [
+  {
+    id: 'tentang',
+    title: 'Tentang Elias dan syarat ini',
+    content: (
+      <>
+        <P>
+          Elias adalah layanan yang dikelola oleh <strong>{LEGAL_OPERATOR}</strong>. Elias membantu tim kreatif dan pemilik brand
+          membaca tren harian dan memutuskan mana yang layak dieksekusi, dipantau, atau dilewati.
+        </P>
+        <P>
+          Dengan membuat akun atau memakai Elias, kamu menyetujui Syarat & Ketentuan ini, <Link href="/privasi" className="font-semibold text-primary hover:underline">Kebijakan Privasi</Link>, dan{' '}
+          <Link href="/cookies" className="font-semibold text-primary hover:underline">Kebijakan Cookie</Link>. Kalau tidak setuju, jangan memakai Elias.
+        </P>
+      </>
+    ),
+  },
+  {
+    id: 'akun',
+    title: 'Akun kamu',
+    content: (
+      <>
+        <P>Akun Elias dibuat dengan alamat email dan kata sandi. Saat ini Elias belum menyediakan masuk lewat akun Google, Facebook, atau Apple.</P>
+        <List>
+          <li>Pakai alamat email yang bisa kamu akses: tautan konfirmasi pendaftaran, kode pemulihan kata sandi, dan konfirmasi ganti email dikirim ke sana.</li>
+          <li>Jaga kerahasiaan kata sandi kamu. Aktivitas yang dilakukan lewat akun kamu dianggap dilakukan oleh kamu.</li>
+          <li>
+            Pilihan <strong>Ingat saya</strong> membuat kamu tetap masuk di browser itu. Tanpa pilihan itu, sesi berakhir saat browser ditutup.
+          </li>
+          <li>Isi profil dan brand dengan informasi yang benar, karena Elias memakainya untuk menyusun saran.</li>
+        </List>
+      </>
+    ),
+  },
+  {
+    id: 'cara-kerja',
+    title: 'Cara Elias bekerja',
+    content: (
+      <>
+        <P>
+          Setiap hari Elias mengumpulkan sinyal dari sumber publik: Google Trends, YouTube, GDELT, Google News, situs berita Indonesia (antara lain
+          Antara, CNN Indonesia, detikNews, CNBC Indonesia, Republika, dan DailySocial), Wikipedia, GitHub, dan Reddit. Dari sinyal itu Elias
+          menyusun kartu tren di Beranda.
+        </P>
+        <P>
+          Saat kamu meminta analisis untuk brand kamu, Elias mengirim informasi brand dan topik tren ke model AI melalui layanan OpenRouter.
+          Rincian data yang dikirim ada di <Link href="/privasi#dibagikan" className="font-semibold text-primary hover:underline">Kebijakan Privasi</Link>.
+        </P>
+        <List>
+          <li>
+            <strong>Analisis AI bisa keliru.</strong> Hasilnya adalah saran, bukan nasihat hukum, keuangan, atau profesional lain. Periksa fakta,
+            hak cipta, dan kepantasan konten sebelum kamu memakainya.
+          </li>
+          <li>
+            Setiap akun punya <strong>batas harian</strong> analisis baru. Analisis yang sudah pernah dibuat hari itu bisa dibuka lagi tanpa
+            mengurangi batas. Model AI yang dipakai juga punya kuota sendiri; bila kuota itu habis, analisis baru bisa dibuat lagi setelah
+            kuota direset.
+          </li>
+          <li>Tamu (tanpa akun) hanya melihat tren dari sumber utama dan tidak bisa meminta analisis untuk brand.</li>
+        </List>
+      </>
+    ),
+  },
+  {
+    id: 'arsip',
+    title: 'Arsip',
+    content: (
+      <>
+        <P>
+          Tren yang kamu simpan, beserta status, prioritas, dan catatannya, disimpan di <strong>penyimpanan lokal browser</strong> pada perangkat
+          yang kamu pakai. Arsip tidak dikirim ke server Elias dan tidak ikut berpindah ke perangkat atau browser lain.
+        </P>
+        <List>
+          <li>Menghapus data situs di browser akan menghapus Arsip di browser itu, dan Elias tidak bisa memulihkannya.</li>
+          <li>Tamu dan setiap akun di perangkat yang sama punya Arsip terpisah.</li>
+          <li>Prioritas hanya bisa diatur oleh pemilik akun.</li>
+        </List>
+      </>
+    ),
+  },
+  {
+    id: 'penggunaan',
+    title: 'Penggunaan yang tidak diizinkan',
+    content: (
+      <List>
+        <li>Masuk ke akun orang lain atau mencoba membaca data pengguna lain.</li>
+        <li>Mengakali batas harian analisis, misalnya dengan membuat banyak akun untuk satu brand.</li>
+        <li>Mengganggu, membebani, atau mencoba membobol layanan Elias.</li>
+        <li>Memakai hasil Elias untuk konten yang melanggar hukum yang berlaku di Indonesia.</li>
+      </List>
+    ),
+  },
+  {
+    id: 'konten-pihak-ketiga',
+    title: 'Konten dan tautan pihak ketiga',
+    content: (
+      <P>
+        Kartu tren menampilkan judul, tautan, dan angka (misalnya jumlah penayangan atau pencarian) dari sumber di atas. Konten aslinya milik
+        pemiliknya masing-masing. Tautan membuka situs pihak ketiga yang punya syarat dan kebijakan privasinya sendiri.
+      </P>
+    ),
+  },
+  {
+    id: 'fitur-segera',
+    title: 'Fitur yang belum tersedia',
+    content: (
+      <P>
+        Fitur yang ditandai <strong>Segera</strong> atau <strong>Segera Hadir</strong>, seperti Chat, belum bisa dipakai. Jam email pagi dan
+        pilihan Always On sudah bisa kamu atur di halaman Notifikasi, tetapi pengiriman email pagi belum aktif. Saat fitur seperti ini
+        aktif, syarat dan kebijakan ini akan diperbarui bila perlu.
+      </P>
+    ),
+  },
+  {
+    id: 'hapus-akun',
+    title: 'Menghapus akun',
+    content: (
+      <P>
+        Kamu bisa menghapus akun kapan saja dari halaman <strong>Profil</strong>, bagian Hapus Akun. Penghapusan bersifat permanen dan tidak
+        bisa dibatalkan. Apa saja yang ikut terhapus dijelaskan di{' '}
+        <Link href="/privasi#penyimpanan" className="font-semibold text-primary hover:underline">Kebijakan Privasi</Link>.
+      </P>
+    ),
+  },
+  {
+    id: 'layanan',
+    title: 'Ketersediaan dan perubahan layanan',
+    content: (
+      <P>
+        Elias bergantung pada sumber data dan layanan pihak ketiga yang bisa berubah atau tidak tersedia. Karena itu Elias disediakan
+        sebagaimana adanya: fitur, sumber tren, dan model AI dapat berubah, dan layanan bisa sesekali tidak tersedia. {LEGAL_OPERATOR} tidak
+        bertanggung jawab atas keputusan atau konten yang kamu buat berdasarkan saran Elias.
+      </P>
+    ),
+  },
+  {
+    id: 'perubahan',
+    title: 'Perubahan syarat',
+    content: (
+      <P>
+        Syarat ini bisa diperbarui. Versi terbaru selalu ada di halaman ini dengan tanggal berlakunya di bagian atas. Dengan tetap memakai
+        Elias setelah perubahan berlaku, kamu menyetujui versi yang baru.
+      </P>
+    ),
+  },
+  {
+    id: 'hukum',
+    title: 'Hukum yang berlaku',
+    content: <P>Syarat & Ketentuan ini diatur oleh dan ditafsirkan menurut hukum Republik Indonesia.</P>,
+  },
+  {
+    id: 'kontak',
+    title: 'Kontak',
+    content: (
+      <P>
+        Pertanyaan tentang syarat ini bisa dikirim ke <ContactLink />.
+      </P>
+    ),
+  },
+];

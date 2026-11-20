@@ -14,12 +14,12 @@ const glows = [
  * Beranda's backdrop: dashed rings rising from behind the header and soft
  * red and indigo glows down the page. AppShell clips what spills past the
  * sides. The rings turn once every four minutes, stopping for reduced motion;
- * the glows hold still.
+ * the glows hold still. Arsip uses it too, without the top-left glow.
  */
-export default function BerandaBackdrop() {
+export default function BerandaBackdrop({ topGlow = true }: { topGlow?: boolean }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      {glows.map(({ left, top, color }) => (
+      {(topGlow ? glows : glows.slice(1)).map(({ left, top, color }) => (
         <div
           key={`${left},${top}`}
           className="absolute h-[1870px] w-[1490px]"

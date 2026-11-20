@@ -371,7 +371,29 @@ type DropdownFieldProps = FieldProps & {
   sheetTitle: string;
   /** Hint kept up once an option is chosen, for options without their own description */
   selectedHint?: (option: SelectOption) => string;
+  /**
+   * The design's filter field (Arsip): a small label always above a 4px-radius
+   * box with 14px text, and no hint. The empty value reads as a placeholder.
+   */
+  compact?: boolean;
 };
+
+/** Small label always shown above a compact filter field, like Arsip's "Cari". */
+export function CompactLabel({ htmlFor, children }: { htmlFor?: string; children: ReactNode }) {
+  const className = 'pb-1 font-inter text-[10px] leading-4 tracking-[-0.02px] text-disabled-content';
+  return htmlFor ? (
+    <label htmlFor={htmlFor} className={`block ${className}`}>
+      {children}
+    </label>
+  ) : (
+    <p aria-hidden className={className}>
+      {children}
+    </p>
+  );
+}
+
+/** Box of a compact filter field, shared by its dropdowns, search and buttons; callers set the border colour. */
+export const compactBox = 'rounded-[4px] border bg-bg-white px-4 py-[18px] text-sm';
 
 /**
  * Custom select from the design's Dropdown molecule. Tablet and up opens an
@@ -388,6 +410,7 @@ export function DropdownField({
   options,
   sheetTitle,
   selectedHint,
+  compact = false,
 }: DropdownFieldProps) {
   const hintId = useId();
   const listId = useId();
@@ -516,9 +539,13 @@ export function DropdownField({
     // its own stacking context and later fields would otherwise paint over the list
     <div ref={rootRef} data-animate="form-item" className={`relative ${open === 'list' ? 'z-[9999]' : ''}`}>
       <div className="flex flex-col">
-        <FieldLabel ref={labelRef} shown={showLabel}>
-          {label}
-        </FieldLabel>
+        {compact ? (
+          <CompactLabel>{label}</CompactLabel>
+        ) : (
+          <FieldLabel ref={labelRef} shown={showLabel}>
+            {label}
+          </FieldLabel>
+        )}
         <input type="hidden" name={name} value={value} />
         <button
           ref={triggerRef}
@@ -530,24 +557,30 @@ export function DropdownField({
           aria-controls={listId}
           aria-describedby={showHint ? hintId : undefined}
           onClick={toggle}
-          className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition-colors ${
-            open ? 'border-primary' : 'border-disabled-surface focus-visible:border-primary'
-          } outline-none`}
+          className={`flex w-full items-center justify-between gap-3 text-left transition-colors ${
+            compact ? compactBox : 'rounded-xl border p-4'
+          } ${open ? 'border-primary' : 'border-disabled-surface focus-visible:border-primary'} outline-none`}
         >
           <span className="flex min-w-0 items-center gap-2.5">
             {icon && <InputIcon icon={icon} />}
-            <span className={`truncate text-lg ${selected ? 'text-txt-black' : 'text-disabled-content'}`}>
+            <span
+              className={`truncate ${compact ? 'text-sm' : 'text-lg'} ${
+                selected && !(compact && !value) ? 'text-txt-black' : 'text-disabled-content'
+              }`}
+            >
               {selected?.label ?? label}
             </span>
           </span>
           {/* Rotated by GSAP; flipped, it reads as the design's CaretUp */}
           <span ref={caretRef} className="flex shrink-0 text-disabled-content">
-            <CaretDown size={18} weight="light" aria-hidden />
+            <CaretDown size={compact ? 16 : 18} weight="light" aria-hidden />
           </span>
         </button>
-        <FieldHint ref={hintRef} id={hintId} shown={showHint}>
-          {description ?? hint}
-        </FieldHint>
+        {!compact && (
+          <FieldHint ref={hintRef} id={hintId} shown={showHint}>
+            {description ?? hint}
+          </FieldHint>
+        )}
       </div>
 
       {/* Overlays the fields below instead of pushing them down */}
@@ -570,7 +603,7 @@ export function DropdownField({
                     onChange(option.value);
                     close();
                   }}
-                  className={`relative flex w-full items-center justify-between py-4 pr-4 text-left text-lg drop-shadow-[0_1px_1px_rgba(12,11,16,0.06)] transition-colors ${
+                  className={`relative flex w-full items-center justify-between py-4 pr-4 text-left ${compact ? 'text-sm' : 'text-lg'} drop-shadow-[0_1px_1px_rgba(12,11,16,0.06)] transition-colors ${
                     isSelected
                       ? 'bg-linear-to-r from-primary/10 to-white/0 pl-[34px] font-semibold text-primary'
                       : 'bg-bg-white pl-4 text-disabled-content hover:enabled:bg-neutral-100 disabled:cursor-not-allowed disabled:text-disabled-surface'

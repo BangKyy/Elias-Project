@@ -1,6 +1,10 @@
 import Link from 'next/link';
 
-const links = ['Syarat', 'Privasi', 'Cookies'];
+const links = [
+  { label: 'Syarat', href: '/syarat' },
+  { label: 'Privasi', href: '/privasi' },
+  { label: 'Cookies', href: '/cookies' },
+];
 
 export default function Footer() {
   return (
@@ -17,8 +21,8 @@ export default function Footer() {
           </p>
           <nav aria-label="Tautan footer" className="flex gap-4 whitespace-nowrap">
             {links.map((link) => (
-              <Link key={link} href="#" className="transition-colors hover:text-txt-black">
-                {link}
+              <Link key={link.href} href={link.href} className="transition-colors hover:text-txt-black">
+                {link.label}
               </Link>
             ))}
           </nav>

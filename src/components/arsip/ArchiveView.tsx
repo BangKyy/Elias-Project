@@ -10,6 +10,7 @@ import ArchiveFilters from './ArchiveFilters';
 import ArchiveItem from './ArchiveItem';
 import Pagination from './Pagination';
 import { StatusIcon } from './StatusControl';
+import MasonryGrid from '../beranda/MasonryGrid';
 import MotionText from '../motion/MotionText';
 
 const noop = () => () => {};
@@ -53,24 +54,28 @@ export default function ArchiveView({ showSampleLoader }: { showSampleLoader: bo
   const empty = hydrated && items.length === 0;
 
   return (
-    <div data-animate="page-item" className="flex flex-col gap-8 md:gap-10">
-      <section className="flex flex-col gap-3">
-        <p className="font-mono text-xs font-bold tracking-wide text-gray-600 uppercase">Arsip</p>
+    <div data-animate="page-item" className="flex flex-col gap-8">
+      <section className="flex flex-col gap-[18px]">
         {/* Opens with the execution count, Elias's primary metric (Ch. 5) */}
-        <MotionText
-          as="h1"
-          effect="scramble"
-          delay={0.2}
-          text={!hydrated ? ' ' : empty ? 'Belum ada tren tersimpan.' : `${executed} dari ${items.length} tren sudah dieksekusi.`}
-          className="max-w-4xl text-2xl font-bold md:text-display-sm laptop:text-display-md"
-        />
+        <h1 className="text-display-lg font-bold md:text-display-2xl">
+          {hydrated && !empty && <span className="mr-3 inline-block bg-primary px-3 text-txt-white md:mr-[18px]">{executed}</span>}
+          <MotionText
+            as="span"
+            effect="scramble"
+            delay={0.2}
+            text={!hydrated ? ' ' : empty ? 'Belum ada tren tersimpan.' : `dari ${items.length} Tren Sudah Dieksekusi`}
+          />
+        </h1>
         {empty ? (
           <p className="text-md text-neutral-600">Kembali ke Beranda dan simpan <strong>satu yang layak ditindaklanjuti</strong>.</p>
         ) : (
           hydrated && (
-            <ul aria-label="Jumlah per status" className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-neutral-700">
+            <ul aria-label="Jumlah per status" className="flex flex-wrap gap-2.5">
               {counts.map(([status, count]) => (
-                <li key={status} className="flex items-center gap-1.5">
+                <li
+                  key={status}
+                  className="flex items-center gap-2.5 border border-primary px-3 py-1.5 font-mono text-xs font-bold text-primary uppercase"
+                >
                   <StatusIcon status={status} />
                   {count} {statusLabels[status]}
                 </li>
@@ -114,8 +119,8 @@ export default function ArchiveView({ showSampleLoader }: { showSampleLoader: bo
       )}
 
       {hydrated && items.length > 0 && (
-        <div ref={listRef} className="flex scroll-mt-28 flex-col gap-4 md:gap-6">
-          <p aria-live="polite" className="text-sm text-gray-600">
+        <div ref={listRef} className="flex scroll-mt-28 flex-col gap-8">
+          <p aria-live="polite" className="sr-only">
             {result.total > 0 && (
               <>
                 Menampilkan{' '}
@@ -140,7 +145,7 @@ export default function ArchiveView({ showSampleLoader }: { showSampleLoader: bo
               </button>
             </div>
           ) : (
-            <div className="grid gap-4 md:gap-6 laptop:grid-cols-2">
+            <MasonryGrid>
               {result.items.map((item) => (
                 <ArchiveItem
                   key={item.insightId}
@@ -153,7 +158,7 @@ export default function ArchiveView({ showSampleLoader }: { showSampleLoader: bo
                   onPriorityLocked={() => setPromptOpen(true)}
                 />
               ))}
-            </div>
+            </MasonryGrid>
           )}
 
           <Pagination page={result.page} pageCount={result.pageCount} onPage={goToPage} />

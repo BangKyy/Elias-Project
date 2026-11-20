@@ -4,6 +4,7 @@ import { connection } from 'next/server';
 import AppShell from '@/components/app/AppShell';
 import DevEmailTestTrigger from '@/components/DevEmailTestTrigger';
 import { allowedTestRecipients, devToolsEnabled } from '@/lib/devTools';
+import { headerAccount } from '@/lib/headerAccount';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default async function DevBriefingPage() {
   if (!user) notFound();
 
   return (
-    <AppShell userId={user.id}>
+    <AppShell userId={user.id} account={await headerAccount(supabase, user)}>
       <div data-animate="page-item" className="mx-auto flex max-w-xl flex-col gap-6 pb-16">
         <div className="flex flex-col gap-2">
           <h1 className="text-display-sm font-semibold">Tes Daily Briefing</h1>

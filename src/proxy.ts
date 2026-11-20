@@ -11,6 +11,8 @@ const guestPaths = ['/login', '/signup'];
 // before any session exists. API
 // routes check the session themselves and answer with JSON, not a redirect
 const openPrefixes = ['/forgot-password', '/auth/', '/api/'];
+// The legal documents: readable by anyone, at any point of sign-up or onboarding
+const legalPaths = ['/syarat', '/privasi', '/cookies'];
 // App pages guests can use: a device-scoped Arsip (AR-8). Signed-in users
 // still have to finish onboarding first
 const publicPaths = ['/arsip'];
@@ -64,7 +66,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (openPrefixes.some((prefix) => path.startsWith(prefix))) return response;
+  if (openPrefixes.some((prefix) => path.startsWith(prefix)) || legalPaths.includes(path)) return response;
 
   // Supabase couldn't be reached, so the session is unknown, not missing.
   // Sending the user to /login here would retry the refresh there and get the
