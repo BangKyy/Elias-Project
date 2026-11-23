@@ -7,8 +7,11 @@ export const LEGAL_OPERATOR = 'Elias';
 /** Where privacy and terms questions go */
 export const LEGAL_CONTACT_EMAIL = 'sumurcreativenextsenta@gmail.com';
 
-/** When the current versions took effect, shown on each page */
-export const LEGAL_EFFECTIVE_DATE = '20 November 2026';
+/**
+ * When the current versions took effect, shown on each page. Set it to the
+ * day Chat is switched on (NEXT_PUBLIC_CHAT_ENABLED=1), since that adds its passages
+ */
+export const LEGAL_EFFECTIVE_DATE = '23 November 2026';
 
 export const legalDocs = [
   { href: '/syarat', label: 'Syarat & Ketentuan' },

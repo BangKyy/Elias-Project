@@ -1,11 +1,17 @@
 import Link from 'next/link';
+import { chatEnabled } from '@/lib/chatFeature';
 import { LEGAL_OPERATOR } from '@/lib/legal';
 import { ContactLink, List, P, type LegalSection } from './LegalPage';
+
+// The Chat passages follow the same switch as Chat itself (lib/chatFeature)
 
 export const termsSummary = [
   <>Elias membaca tren dari <strong>sumber publik</strong> dan memakai <strong>model AI</strong> untuk menyarankan apa yang bisa brand kamu lakukan. Saran itu bisa keliru, jadi periksa dulu sebelum dipublikasikan.</>,
   <>Akun dibuat dengan <strong>email dan kata sandi</strong>. Kamu bisa menghapusnya kapan saja dari halaman Profil.</>,
   <>Arsip tersimpan <strong>di browser perangkat yang kamu pakai</strong>, bukan di server kami, dan hilang bila data browser dihapus.</>,
+  ...(chatEnabled
+    ? [<>Chat hanya membahas <strong>satu kartu tren</strong>. Pesannya disimpan 30 hari dan diproses model AI, jadi <strong>jangan tulis informasi rahasia</strong>.</>]
+    : []),
   <>Syarat ini tunduk pada <strong>hukum Republik Indonesia</strong>.</>,
 ];
 
@@ -67,11 +73,41 @@ export const termsSections: LegalSection[] = [
             mengurangi batas. Model AI yang dipakai juga punya kuota sendiri; bila kuota itu habis, analisis baru bisa dibuat lagi setelah
             kuota direset.
           </li>
-          <li>Tamu (tanpa akun) hanya melihat tren dari sumber utama dan tidak bisa meminta analisis untuk brand.</li>
+          <li>Tamu (tanpa akun) hanya melihat tren dari sumber utama dan tidak bisa meminta analisis untuk brand{chatEnabled ? ' atau memakai Chat' : ''}.</li>
         </List>
       </>
     ),
   },
+  ...(chatEnabled
+    ? [
+        {
+          id: 'chat',
+          title: 'Chat dengan Elias',
+          content: (
+            <>
+              <P>
+                Chat dipakai untuk bertanya lanjut tentang <strong>satu kartu tren</strong>: angle, format, copy, risiko, atau langkah yang bisa
+                kamu mulai hari ini. Chat dibuka dari tombol <strong>Tanya Elias</strong> di kartu Beranda atau Arsip, dan hanya untuk pengguna
+                yang sudah masuk dan menyelesaikan profil.
+              </P>
+              <List>
+                <li>Pertanyaan di luar kartu itu tidak dijawab. Elias akan mengarahkan kamu kembali ke kartunya.</li>
+                <li>
+                  Ada batas pesan per hari dan per percakapan, serta batas bersama untuk semua pengguna agar kartu harian tetap bisa disusun.
+                  Bila batas tercapai, Chat bisa dipakai lagi setelah batasnya direset.
+                </li>
+                <li>
+                  Balasan Elias di Chat juga saran dari model AI yang bisa keliru. Pesan disimpan 30 hari dan diproses model AI melalui
+                  OpenRouter, jadi <strong>jangan menulis informasi rahasia</strong>, data pelanggan, atau data pribadi orang lain. Rinciannya ada
+                  di <Link href="/privasi#dibagikan" className="font-semibold text-primary hover:underline">Kebijakan Privasi</Link>.
+                </li>
+                <li>Kamu bisa menghapus percakapan kapan saja dengan Hapus percakapan.</li>
+              </List>
+            </>
+          ),
+        },
+      ]
+    : []),
   {
     id: 'arsip',
     title: 'Arsip',
@@ -95,7 +131,8 @@ export const termsSections: LegalSection[] = [
     content: (
       <List>
         <li>Masuk ke akun orang lain atau mencoba membaca data pengguna lain.</li>
-        <li>Mengakali batas harian analisis, misalnya dengan membuat banyak akun untuk satu brand.</li>
+        <li>Mengakali batas harian analisis{chatEnabled ? ' atau Chat' : ''}, misalnya dengan membuat banyak akun untuk satu brand.</li>
+        {chatEnabled && <li>Memakai Chat untuk hal di luar kartu tren, atau mencoba membuat Elias mengabaikan aturannya.</li>}
         <li>Mengganggu, membebani, atau mencoba membobol layanan Elias.</li>
         <li>Memakai hasil Elias untuk konten yang melanggar hukum yang berlaku di Indonesia.</li>
       </List>
@@ -116,9 +153,10 @@ export const termsSections: LegalSection[] = [
     title: 'Fitur yang belum tersedia',
     content: (
       <P>
-        Fitur yang ditandai <strong>Segera</strong> atau <strong>Segera Hadir</strong>, seperti Chat, belum bisa dipakai. Jam email pagi dan
-        pilihan Always On sudah bisa kamu atur di halaman Notifikasi, tetapi pengiriman email pagi belum aktif. Saat fitur seperti ini
-        aktif, syarat dan kebijakan ini akan diperbarui bila perlu.
+        Fitur yang ditandai <strong>Segera</strong> atau <strong>Segera Hadir</strong>
+        {chatEnabled ? '' : ', seperti Chat,'} belum bisa dipakai. Jam email pagi dan pilihan Always On sudah bisa kamu atur di halaman
+        Notifikasi, tetapi pengiriman email pagi belum aktif. Saat fitur seperti ini aktif, syarat dan kebijakan ini akan diperbarui bila
+        perlu.
       </P>
     ),
   },

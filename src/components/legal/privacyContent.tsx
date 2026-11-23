@@ -1,10 +1,21 @@
 import Link from 'next/link';
+import { chatEnabled } from '@/lib/chatFeature';
 import { LEGAL_OPERATOR } from '@/lib/legal';
 import { ContactLink, List, P, type LegalSection } from './LegalPage';
 
+// The Chat passages follow the same switch as Chat itself (lib/chatFeature),
+// so the policy never describes a feature people can't use yet, or misses one they can
+
 export const privacySummary = [
   <>Kami menyimpan <strong>email, profil, dan jawaban brand</strong> kamu untuk menjalankan akun dan menyesuaikan saran Elias.</>,
-  <>Untuk analisis, <strong>informasi brand</strong> (bukan nama atau email kamu) dikirim ke model AI melalui OpenRouter.</>,
+  chatEnabled ? (
+    <>
+      Untuk analisis dan Chat, <strong>informasi brand, kartu tren, dan pesan Chat yang kamu tulis</strong> dikirim ke model AI melalui
+      OpenRouter. Nama dan email kamu tidak ikut dikirim. Percakapan Chat disimpan <strong>30 hari</strong>.
+    </>
+  ) : (
+    <>Untuk analisis, <strong>informasi brand</strong> (bukan nama atau email kamu) dikirim ke model AI melalui OpenRouter.</>
+  ),
   <>Elias <strong>tidak memakai</strong> analytics, iklan, atau pelacak pihak ketiga, dan <strong>tidak menjual</strong> data kamu.</>,
   <>Kamu bisa mengubah data di Profil dan <strong>menghapus akun</strong> kapan saja.</>,
 ];
@@ -47,9 +58,16 @@ export const privacySections: LegalSection[] = [
           koordinatnya.
         </P>
         <P>
-          <strong>Penggunaan analisis.</strong> Jumlah analisis baru yang kamu buat per hari, untuk menerapkan batas harian, serta hasil analisis
-          yang disimpan sementara agar analisis yang sama tidak dibuat dua kali.
+          <strong>Penggunaan model AI.</strong> Catatan setiap permintaan ke model AI: jenisnya (analisis, kartu harian
+          {chatEnabled ? ', atau Chat' : ''}), akun yang memintanya bila ada, dan waktunya, tanpa isi permintaan. Catatan ini dipakai untuk menerapkan batas harian. Hasil analisis juga disimpan
+          sementara agar analisis yang sama tidak dibuat dua kali.
         </P>
+        {chatEnabled && (
+          <P>
+            <strong>Chat.</strong> Pesan yang kamu tulis di Chat dan balasan Elias, beserta salinan kartu tren yang kamu tanyakan. Bila kartu
+            itu dibuka dari Arsip, salinannya ikut memuat catatan Arsip kamu untuk kartu tersebut.
+          </P>
+        )}
         <P>
           <strong>Di perangkat kamu.</strong> Arsip dan beberapa data sementara disimpan di browser dan tidak dikirim ke server kami. Rinciannya
           ada di <Link href="/cookies" className="font-semibold text-primary hover:underline">Kebijakan Cookie</Link>.
@@ -68,7 +86,8 @@ export const privacySections: LegalSection[] = [
         <li>Membuat akun, memverifikasi email, menjaga kamu tetap masuk, dan memulihkan kata sandi.</li>
         <li>Menyesuaikan Beranda: kategori brand menentukan kartu yang tampil lebih dulu, dan target market menentukan urutannya.</li>
         <li>Menyusun analisis Elias sesuai brand dan peran kamu.</li>
-        <li>Menerapkan batas harian analisis per akun.</li>
+        {chatEnabled && <li>Menjawab pertanyaan lanjutan kamu tentang satu kartu tren di Chat, dan menyimpan percakapannya agar bisa kamu lanjutkan.</li>}
+        <li>Menerapkan batas harian analisis{chatEnabled ? ' dan Chat' : ''} per akun, dan menjaga kuota model AI tetap cukup untuk kartu harian.</li>
         <li>Menyimpan jam email pagi dan pilihan Always On. Pengiriman email pagi belum aktif.</li>
         <li>Memahami dari mana pengguna mengetahui Elias, dari jawaban survei onboarding.</li>
       </List>
@@ -89,6 +108,14 @@ export const privacySections: LegalSection[] = [
             <strong>OpenRouter</strong>: saat kamu meminta analisis, Elias mengirim kategori brand, archetype, target market, lokasi dan fokus
             lokal, tujuan brand, peran kamu, serta topik dan rincian tren. OpenRouter meneruskannya ke penyedia model AI untuk menyusun
             jawaban. Nama dan email kamu <strong>tidak</strong> ikut dikirim.
+            {chatEnabled && (
+              <>
+                {' '}
+                Untuk Chat, OpenRouter juga menerima kartu tren yang kamu tanyakan, beberapa pesan terakhir percakapan, dan pesan baru kamu.
+                Elias memakai model gratis, dan sebagian penyedianya bisa mencatat atau memakai isi permintaan untuk melatih model mereka.
+                Karena itu <strong>jangan menulis informasi rahasia</strong>, data pelanggan, atau data pribadi orang lain di Chat.
+              </>
+            )}
           </li>
           <li>
             <strong>BigDataCloud</strong>: hanya bila kamu memakai tombol lokasi. Browser kamu mengirim koordinat ke BigDataCloud untuk diubah
@@ -111,8 +138,14 @@ export const privacySections: LegalSection[] = [
           <strong>Akun dan profil</strong>: sampai kamu menghapus akun.
         </li>
         <li>
-          <strong>Jumlah analisis harian</strong>: hanya hari ini; data hari sebelumnya dihapus otomatis setiap malam.
+          <strong>Catatan permintaan ke model AI</strong>: 30 hari, lalu dihapus otomatis.
         </li>
+        {chatEnabled && (
+          <li>
+            <strong>Percakapan Chat</strong>: 30 hari setelah pesan terakhir, lalu dihapus otomatis. Kamu bisa menghapusnya lebih cepat dengan
+            Hapus percakapan.
+          </li>
+        )}
         <li>
           <strong>Hasil analisis sementara</strong>: sampai tengah malam WIB, lalu dihapus otomatis.
         </li>
@@ -127,9 +160,10 @@ export const privacySections: LegalSection[] = [
     title: 'Saat akun dihapus',
     content: (
       <P>
-        Menghapus akun dari halaman Profil langsung menghapus akun di Supabase Auth beserta profil, data brand, dan jumlah analisis harian
-        kamu, serta hasil analisis sementara milik akun itu. Arsip akun itu di browser yang sedang kamu pakai ikut dihapus. Arsip di
-        perangkat atau browser lain tidak bisa kami jangkau, jadi hapus dari browser tersebut bila perlu.
+        Menghapus akun dari halaman Profil langsung menghapus akun di Supabase Auth beserta profil, data brand,
+        {chatEnabled ? ' semua percakapan Chat,' : ''} dan hasil analisis sementara milik akun itu. Catatan permintaan ke model AI yang
+        masih tersimpan tidak lagi terhubung ke akun mana pun, lalu terhapus dalam 30 hari. Arsip akun itu di browser yang sedang kamu
+        pakai ikut dihapus. Arsip di perangkat atau browser lain tidak bisa kami jangkau, jadi hapus dari browser tersebut bila perlu.
       </P>
     ),
   },
@@ -159,8 +193,9 @@ export const privacySections: LegalSection[] = [
     title: 'Keamanan',
     content: (
       <P>
-        Database Elias memakai aturan akses per baris (row level security), sehingga setiap akun hanya bisa membaca dan mengubah profilnya
-        sendiri. Data penggunaan dan hasil analisis sementara tidak bisa diakses dari browser sama sekali. Mengganti kata sandi meminta kata
+        Database Elias memakai aturan akses per baris (row level security), sehingga setiap akun hanya bisa membaca dan mengubah profil dan
+        data brand-nya sendiri.{chatEnabled ? ' Percakapan Chat hanya bisa dibaca dan dihapus oleh pemiliknya, dan tidak bisa diubah dari browser.' : ''}{' '}
+        Catatan penggunaan model AI dan hasil analisis sementara tidak bisa diakses dari browser sama sekali. Mengganti kata sandi meminta kata
         sandi lama lebih dulu.
       </P>
     ),

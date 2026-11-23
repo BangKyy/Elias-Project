@@ -207,7 +207,12 @@ Also to handle while building it:
 - [x] `/chat/<id>`: the conversation (`src/components/chat/ChatView.tsx`): the card on top, a note that messages are kept 30 days and processed through OpenRouter (so no confidential information), three starter questions on an empty conversation, "Sisa N pesan di percakapan ini", Ctrl+Enter to send, a failed send puts the message back in the box, and "Hapus percakapan" with a confirm step. Another user's id is a 404
 - [x] "Tanya Elias" (`src/components/chat/AskEliasLink.tsx`) on Beranda cards for signed-in users, and on Arsip entries for account holders
 - [x] Behind a switch until step 5 (`src/lib/chatFeature.ts`): open in development, and in production only with `NEXT_PUBLIC_CHAT_ENABLED=1`. Until then production shows the header item as "Segera", hides "Tanya Elias", and `/chat` pages are 404. `/api/chat` itself is live (guests get 401) but nothing calls it
-- [ ] Step 5: update Privacy and Terms, then set `NEXT_PUBLIC_CHAT_ENABLED=1` in Vercel (Production) and redeploy; read at build time
+- [x] Step 5a, Privacy and Terms (23 Nov 2026). The Chat passages follow `chatEnabled`, so the pages never describe Chat before it opens:
+  - Privacy: chat messages and the card copy (with its Arsip note) are collected, why, that OpenRouter receives the card, recent messages and the new one, that some free model providers may log or train on prompts (so no confidential, customer or other people's data), 30-day retention and Hapus percakapan, removed with the account, readable only by their owner
+  - Terms: a "Chat dengan Elias" section (one card only, signed-in and onboarded users, off-topic questions turned back, per-day, per-conversation and shared limits, AI replies can be wrong, no confidential information), Chat added to the not-allowed uses, and dropped from the "Segera" list
+  - Already live, whatever the switch: the ledger is described (each model request's kind, account and time, no content, kept 30 days, unlinked from a deleted account), replacing "only today's analysis count"
+  - `LEGAL_EFFECTIVE_DATE` is 23 November 2026; set it to the day Chat is switched on
+- [ ] Step 5b: set `NEXT_PUBLIC_CHAT_ENABLED=1` in Vercel (Production) and redeploy (read at build time), after the signed-in test above
 - [ ] Chat errors kept somewhere that outlives Vercel Hobby's 1-hour logs
 - [ ] Preview deployments have no env vars, so chat is tested locally or on production against the one database
 
