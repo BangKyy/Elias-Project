@@ -9,6 +9,8 @@ import ScrollReveal from '../motion/ScrollReveal';
 import EliasTrendCard from './EliasTrendCard';
 import EvidenceSection from './EvidenceSection';
 import SaveButton from './SaveButton';
+import AskEliasLink from '../chat/AskEliasLink';
+import { chatEnabled } from '@/lib/chatFeature';
 import SourceChip, { leadFigure } from './SourceChip';
 import VerdictTab from './VerdictTab';
 
@@ -131,7 +133,11 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
           <p className="text-xs text-disabled-content">
             Teramati <time dateTime={insight.observedOn}>{formatDate(insight.observedOn, { year: undefined })}</time>
           </p>
-          <SaveButton insight={insight} />
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Chat is for signed-in users only (MVP 7): flavour is null for guests */}
+            {flavour && chatEnabled && <AskEliasLink insightId={insight.id} />}
+            <SaveButton insight={insight} />
+          </div>
         </div>
       </article>
     </ScrollReveal>

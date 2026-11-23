@@ -171,7 +171,7 @@ Env: `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `A
 
 Scope (decided 23 Nov 2026): for now Chat is only a follow-up on a card, not free-form questions.
 
-- [ ] Opened from a card only: an "Tanya Elias" action on the card (Beranda, and Arsip for saved trends); no empty chat box, and no entry from the header's Chat link without a card (it lists the user's earlier card threads instead)
+- [x] Opened from a card only: an "Tanya Elias" action on the card (Beranda, and Arsip for saved trends); no empty chat box, and no entry from the header's Chat link without a card (it lists the user's earlier card threads instead)
 - [ ] Every thread belongs to exactly one card: `card_snapshot` is required
 - [ ] Questions off the card's topic get a short refusal in Elias's voice that points back to the card (system prompt plus an output check), so the chat doesn't turn into a general assistant on the free quota
 - Free-form questions may come later; they would need their own grounding (no card to anchor the answer) and their own limits
@@ -185,7 +185,7 @@ Moved into V1 (decided 23 Nov 2026, reversing the earlier "Phase 2, not V1" call
 Also to handle while building it:
 
 - [x] Model list: chat asks for the same strict JSON as an analysis (`{ reply, onTopic }`), so it runs on the same free models; `OPENROUTER_CHAT_MODELS` overrides them. The `onTopic` flag lets the code, not only the prompt, swap an off-topic answer for a fixed short refusal
-- [ ] Slow free models: a clear "Elias sedang menulis…" state (streaming if a model allows it); Vercel Hobby stops a function at 300 s
+- [x] Slow free models: a clear "Elias sedang menulis… model gratis kadang butuh sampai satu menit" state; the route allows 120 s (Vercel Hobby stops a function at 300 s). No streaming yet: the strict-JSON reply arrives whole
 - [x] A card sent from the browser (Arsip entries older than 5 days) passes known fields only, each clipped, and is treated as data; Beranda cards are loaded on the server by `insight_id`
 
 ### Chat API route (built 23 Nov 2026)
@@ -198,7 +198,16 @@ Also to handle while building it:
 - [x] A `chat` request from the shared ledger (5 per user, 15 in total, never the reserve); 429 `user_limit` or `daily_limit`, and given back when no model answered
 - [x] The last 8 messages and the card go to the model, the brand from the database (never the request); the reply gets the V3 / LN-1 clean-up with line breaks kept
 - [x] Thread and both messages saved only once Elias answered, with the secret key, so a failed call leaves no empty thread
-- [ ] End-to-end test while signed in (uses one real `chat` request and writes one thread); planned with the chat screen (step 4)
+- [ ] End-to-end test while signed in (uses one real `chat` request and writes one thread), on the local dev server where Chat is open
+
+### Chat screen (built 23 Nov 2026)
+
+- [x] `/chat`: the user's conversations, newest first (RLS), each with its card's verdict and title; an empty state that points to Beranda and Arsip
+- [x] `/chat/baru?kartu=<id>`: a new conversation from "Tanya Elias". A Beranda card is read on the server; an older card comes from this device's Arsip and is sent with the first message; neither gives "Kartu ini tidak ditemukan" with links back. Nothing is saved until Elias's first reply, then the page moves to `/chat/<id>`
+- [x] `/chat/<id>`: the conversation (`src/components/chat/ChatView.tsx`): the card on top, a note that messages are kept 30 days and processed through OpenRouter (so no confidential information), three starter questions on an empty conversation, "Sisa N pesan di percakapan ini", Ctrl+Enter to send, a failed send puts the message back in the box, and "Hapus percakapan" with a confirm step. Another user's id is a 404
+- [x] "Tanya Elias" (`src/components/chat/AskEliasLink.tsx`) on Beranda cards for signed-in users, and on Arsip entries for account holders
+- [x] Behind a switch until step 5 (`src/lib/chatFeature.ts`): open in development, and in production only with `NEXT_PUBLIC_CHAT_ENABLED=1`. Until then production shows the header item as "Segera", hides "Tanya Elias", and `/chat` pages are 404. `/api/chat` itself is live (guests get 401) but nothing calls it
+- [ ] Step 5: update Privacy and Terms, then set `NEXT_PUBLIC_CHAT_ENABLED=1` in Vercel (Production) and redeploy; read at build time
 - [ ] Chat errors kept somewhere that outlives Vercel Hobby's 1-hour logs
 - [ ] Preview deployments have no env vars, so chat is tested locally or on production against the one database
 
@@ -221,7 +230,7 @@ Built and applied 23 Nov 2026 (`20261123120000_chat_tables.sql`); checked on the
   - [ ] Page: `/chat` stays out of `publicPaths` in `src/proxy.ts`, so guests are sent to `/login` and signed-in users must finish onboarding first (already true; a comment there guards it)
   - [ ] API: `/api/` routes skip the proxy's sign-in check, so the chat route answers 401 without a session, like `/api/elias/insight`
   - [ ] Database: chat tables grant nothing to `anon`, and their policies are `to authenticated` with `can_access_brand`
-  - [ ] Header: for guests the Chat link leads to sign-in (through the proxy) instead of a chat screen
+  - [x] Header: for guests the Chat link leads to sign-in (through the proxy) instead of a chat screen; `/chat`, `/chat/baru` and `/chat/<id>` all redirect guests to `/login` (checked locally)
 - [ ] Only the last 6–10 messages plus `card_snapshot` go to the model, not the whole thread (free-model context and latency)
 - [ ] Own daily limit per user: see Chat message limits below
 - [ ] Stored user text is resent as data, never instructions; V3 output rules enforced in code as for insights

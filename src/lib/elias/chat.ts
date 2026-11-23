@@ -32,6 +32,9 @@ export type CardSnapshot = {
 
 export type ChatTurn = { role: 'user' | 'elias'; content: string };
 
+/** The user's messages per conversation (docs/MVP.md, Chat message limits). */
+export const chatThreadLimit = Number(process.env.ELIAS_CHAT_THREAD_LIMIT) || 5;
+
 export type ChatErrorCode = InsightErrorCode | 'thread_limit' | 'not_found' | 'incomplete_profile';
 export type ChatError = Omit<InsightError, 'code'> & { code: ChatErrorCode };
 

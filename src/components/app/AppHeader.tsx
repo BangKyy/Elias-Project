@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { ArrowRight, CaretDown, List, SignOut, UserCircle, X } from '@phosphor-icons/react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { chatEnabled } from '@/lib/chatFeature';
 import type { HeaderAccount } from '@/lib/headerAccount';
 import Logo from '../Logo';
 import SignOutButton from '../SignOutButton';
@@ -25,7 +26,14 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: 'Beranda', href: '/', ready: true, description: 'Tren hari ini yang layak ditindaklanjuti brand kamu.' },
   { label: 'Arsip', href: '/arsip', ready: true, description: 'Tren yang kamu simpan, lengkap dengan status dan catatan.', badge: 'new' },
-  { label: 'Chat', href: '/chat', ready: false, description: 'Tanya Elias langsung soal tren dan brand kamu.', badge: 'soon' },
+  // Open once chatEnabled (lib/chatFeature); a guest who follows it is sent to /login by the proxy
+  {
+    label: 'Chat',
+    href: '/chat',
+    ready: chatEnabled,
+    description: 'Tanya Elias lebih lanjut soal kartu tren untuk brand kamu.',
+    badge: chatEnabled ? 'new' : 'soon',
+  },
 ];
 
 // The account panel's NAVIGASI list; the same pages as the tabs on /profil (ProfileShell)

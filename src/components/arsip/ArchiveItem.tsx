@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/dates';
 import { parseBrief } from '@/lib/elias/brief';
 import { sources } from '@/lib/insights/types';
 import VerdictTab from '../beranda/VerdictTab';
+import AskEliasLink from '../chat/AskEliasLink';
 import NoteBox from './NoteBox';
 import NoteEditor from './NoteEditor';
 import PriorityControl from './PriorityControl';
@@ -16,6 +17,8 @@ import StatusControl from './StatusControl';
 type ArchiveItemProps = {
   item: ArchivedTrend;
   canSetPriority: boolean;
+  /** Signed in with Chat open: shows Tanya Elias (MVP 7) */
+  canChat: boolean;
   onStatus: (status: ArchiveStatus) => void;
   onPriority: (priority: ArchivePriority | null) => void;
   onNote: (notes: string) => void;
@@ -33,6 +36,7 @@ const outlineButton =
 export default function ArchiveItem({
   item,
   canSetPriority,
+  canChat,
   onStatus,
   onPriority,
   onNote,
@@ -101,7 +105,8 @@ export default function ArchiveItem({
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            {canChat && <AskEliasLink insightId={item.insightId} />}
             <button type="button" onClick={() => setEditingNotes(true)} className={primaryButton}>
               <NotePencil size={16} aria-hidden />
               {item.notes ? 'Sunting Catatan' : 'Tambah Catatan'}

@@ -12,6 +12,7 @@ import Pagination from './Pagination';
 import { StatusIcon } from './StatusControl';
 import MasonryGrid from '../beranda/MasonryGrid';
 import MotionText from '../motion/MotionText';
+import { chatEnabled } from '@/lib/chatFeature';
 
 const noop = () => () => {};
 
@@ -151,6 +152,7 @@ export default function ArchiveView({ showSampleLoader }: { showSampleLoader: bo
                   key={item.insightId}
                   item={item}
                   canSetPriority={canSetPriority}
+                  canChat={canSetPriority && chatEnabled}
                   onStatus={(status) => archive.setStatus(item.insightId, status)}
                   onPriority={(priority) => archive.setPriority(item.insightId, priority)}
                   onNote={(notes) => archive.setNotes(item.insightId, notes)}

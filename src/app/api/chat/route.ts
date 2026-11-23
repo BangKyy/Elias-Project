@@ -3,6 +3,7 @@ import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { creativeRoleFor } from '@/lib/creativeRoles';
 import { brandContextFor, fetchProfile } from '@/lib/elias/brandProfile';
 import {
+  chatThreadLimit,
   generateChatReply,
   snapshotFromBrowser,
   snapshotFromInsight,
@@ -21,8 +22,6 @@ export const maxDuration = 120;
 const MESSAGE_MAX = 1000;
 // Recent messages sent back to the model with each new one, not the whole thread
 const HISTORY_MESSAGES = 8;
-// The user's messages per conversation (docs/MVP.md, Chat message limits)
-const THREAD_LIMIT = Number(process.env.ELIAS_CHAT_THREAD_LIMIT) || 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type ChatResponse =
@@ -118,10 +117,10 @@ export async function POST(request: Request) {
         .limit(HISTORY_MESSAGES)
         .returns<ChatTurn[]>(),
     ]);
-    if ((count ?? 0) >= THREAD_LIMIT) {
+    if ((count ?? 0) >= chatThreadLimit) {
       return fail(429, {
         code: 'thread_limit',
-        message: `Percakapan ini sudah mencapai ${THREAD_LIMIT} pesan. Mulai percakapan baru dari kartunya.`,
+        message: `Percakapan ini sudah mencapai ${chatThreadLimit} pesan. Mulai percakapan baru dari kartunya.`,
       });
     }
     history = (recent ?? []).reverse();
