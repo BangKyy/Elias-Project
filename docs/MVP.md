@@ -198,7 +198,7 @@ Also to handle while building it:
 - [x] A `chat` request from the shared ledger (5 per user, 15 in total, never the reserve); 429 `user_limit` or `daily_limit`, and given back when no model answered
 - [x] The last 8 messages and the card go to the model, the brand from the database (never the request); the reply gets the V3 / LN-1 clean-up with line breaks kept
 - [x] Thread and both messages saved only once Elias answered, with the secret key, so a failed call leaves no empty thread
-- [ ] End-to-end test while signed in (uses one real `chat` request and writes one thread), on the local dev server where Chat is open
+- [x] End-to-end test while signed in, on the local dev server (23 Nov 2026): an on-topic question got an answer in voice with the restraint a sensitive topic needs, an off-topic one got the fixed refusal, both counted as `chat` in the ledger and saved in one thread. "Hapus percakapan" not yet tried in the browser (its RLS rule is tested)
 
 ### Chat screen (built 23 Nov 2026)
 
@@ -212,7 +212,7 @@ Also to handle while building it:
   - Terms: a "Chat dengan Elias" section (one card only, signed-in and onboarded users, off-topic questions turned back, per-day, per-conversation and shared limits, AI replies can be wrong, no confidential information), Chat added to the not-allowed uses, and dropped from the "Segera" list
   - Already live, whatever the switch: the ledger is described (each model request's kind, account and time, no content, kept 30 days, unlinked from a deleted account), replacing "only today's analysis count"
   - `LEGAL_EFFECTIVE_DATE` is 23 November 2026; set it to the day Chat is switched on
-- [ ] Step 5b: set `NEXT_PUBLIC_CHAT_ENABLED=1` in Vercel (Production) and redeploy (read at build time), after the signed-in test above
+- [x] Step 5b: `NEXT_PUBLIC_CHAT_ENABLED=1` set in Vercel (Production) on 23 Nov 2026 and deployed; Chat is open in production. `LEGAL_EFFECTIVE_DATE` stays 23 November 2026
 - [ ] Chat errors kept somewhere that outlives Vercel Hobby's 1-hour logs
 - [ ] Preview deployments have no env vars, so chat is tested locally or on production against the one database
 
