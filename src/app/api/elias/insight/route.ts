@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { ownsBrand } from '@/lib/brandProfiles';
+import { refundModelRequest, takeModelRequest, unanswered, type ModelRequest } from '@/lib/modelLedger';
 import { isCreativeRole } from '@/lib/creativeRoles';
-import { dedupe, getCachedInsight, refundUserBudget, setCachedInsight, takeUserBudget } from '@/lib/elias/cache';
+import { dedupe, getCachedInsight, setCachedInsight } from '@/lib/elias/cache';
 import { executionBrief } from '@/lib/elias/brief';
 import { generateInsight, type GenerateResult } from '@/lib/elias/openrouter';
 import { fetchNewsContext, type NewsContext } from '@/lib/gdelt';
@@ -193,9 +194,9 @@ export async function POST(request: Request) {
   if (cached) return success(insightRequest, cached, true);
 
   type Outcome = { generated: GenerateResult; news: NewsContext; youtube: YouTubeTrends };
-  const result = await dedupe<Outcome | { overBudget: number }>(key, async () => {
-    const budget = await takeUserBudget(user.id);
-    if (!budget.allowed) return { overBudget: budget.retryAfter };
+  const result = await dedupe<Outcome | { refused: ModelRequest }>(key, async () => {
+    const modelRequest = await takeModelRequest('analysis', user.id);
+    if (!modelRequest.allowed) return { refused: modelRequest };
     // Neither source can fail the call: problems come back as a status the
     // prompt and the card both handle
     const keywords = newsKeywordsFor(insightRequest);
@@ -208,15 +209,24 @@ export async function POST(request: Request) {
     const generated = await generateInsight(insightRequest, news, youtube, github);
     if (generated.ok) await setCachedInsight(key, generated.insight, generated.model, news, youtube);
     // Rejected before reaching a model: don't count it against the user
-    else if (generated.status === 429 || generated.status === 503) await refundUserBudget(user.id, budget);
+    else if (unanswered(generated.status)) await refundModelRequest(modelRequest);
     return { generated, news, youtube };
   });
 
-  if ('overBudget' in result) {
+  if ('refused' in result) {
+    const { refused, retryAfter } = result.refused;
+    // The account-wide quota, or the share of it kept for the daily cycle and the morning email
+    if (refused !== 'user') {
+      return fail(429, {
+        code: 'daily_limit',
+        message: 'Batas harian model gratis sudah habis. Analisis baru bisa dibuat lagi setelah kuota direset.',
+        retryAfter,
+      });
+    }
     return fail(429, {
       code: 'user_limit',
       message: 'Jatah analisis kamu untuk hari ini sudah habis. Analisis yang sudah dibuat tetap bisa dibuka.',
-      retryAfter: result.overBudget,
+      retryAfter,
     });
   }
   const { generated, news, youtube } = result;

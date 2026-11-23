@@ -1,3 +1,4 @@
+import { keepEnglishTerms } from '../glossary';
 import type { Verdict } from '../insights/types';
 import { executionFormats, type CopySuggestion, type EliasInsight, type ExecutionFormat } from './types';
 
@@ -12,17 +13,19 @@ const verdictAliases: Record<string, Verdict> = {
 };
 
 /**
- * Enforces V3 on whatever the model wrote: no emoji, no exclamation marks.
- * Cheaper and more reliable than hoping a free model follows the prompt.
+ * Enforces V3 on whatever the model wrote: no emoji, no exclamation marks,
+ * and the LN-1 terms in English. Cheaper and more reliable than hoping a free
+ * model follows the prompt. `keepTerms: false` for search keywords, which
+ * should stay in the words Indonesian news uses.
  */
-export function cleanCopy(text: string, maxLength = 600): string {
-  return text
+export function cleanCopy(text: string, maxLength = 600, { keepTerms = true } = {}): string {
+  const cleaned = text
     .replace(/\p{Extended_Pictographic}|️/gu, '')
     .replace(/!+/g, '.')
     .replace(/\.{2,}/g, '.')
     .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, maxLength);
+    .trim();
+  return (keepTerms ? keepEnglishTerms(cleaned) : cleaned).slice(0, maxLength);
 }
 
 /** "act", "Eksekusi", " SKIP " → a verdict; undefined for anything else. */

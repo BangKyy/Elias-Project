@@ -7,6 +7,7 @@ import { cleanCopy, extractJson, isRecord, nonEmpty, parseVerdict } from '../eli
 import { fetchIndonesiaHeadlines, type NewsContext } from '../gdelt';
 import { audienceMarkets, isAudienceMarket, targetMarketLabel } from '../targetMarkets';
 import { doNotTranslate } from '../glossary';
+import { refundModelRequest, takeModelRequest, unanswered } from '../modelLedger';
 import { fetchMediaNews, type FeedArticle } from '../newsFeeds';
 import { fetchWikimediaTrends, type WikimediaTrends } from '../wikimedia';
 import { fetchGitHubTrends, repoFacts, techAdjacentCategories, type GitHubTrends } from '../github';
@@ -516,7 +517,7 @@ function parseTrends(text: string, items: SourceItem[], date: string): Draft[] |
     if (!cited.length) continue;
 
     const tags = Array.isArray(trend.tags)
-      ? trend.tags.filter(nonEmpty).slice(0, 4).map((tag) => cleanCopy(tag, 40).toLowerCase())
+      ? trend.tags.filter(nonEmpty).slice(0, 4).map((tag) => cleanCopy(tag, 40, { keepTerms: false }).toLowerCase())
       : [];
     const category =
       typeof trend.category === 'string' && (categories as readonly string[]).includes(trend.category)
@@ -552,6 +553,11 @@ const missingRecommendation = 'Rekomendasi untuk peran ini belum tersedia hari i
 
 /** One sentence per card for one role, or null when the call or its reply failed. */
 async function recommendationsFor(role: CreativeRole, drafts: Draft[]): Promise<string[] | null> {
+  const request = await takeModelRequest('cycle');
+  if (!request.allowed) {
+    console.error('Daily cycle: no OpenRouter requests left today for', role);
+    return null;
+  }
   const completion = await requestCompletion({
     models: cycleModels(),
     messages: [
@@ -567,6 +573,7 @@ async function recommendationsFor(role: CreativeRole, drafts: Draft[]): Promise<
   });
   if (!completion.ok) {
     console.error('Daily cycle: recommendations failed', role, completion.status, completion.error.code);
+    if (unanswered(completion.status)) await refundModelRequest(request);
     return null;
   }
   const data = extractJson(completion.content);
@@ -644,6 +651,12 @@ async function generate(date: string): Promise<Generated> {
     return failed;
   }
 
+  // Counted in the shared ledger: the cycle may use the share analysis and chat can't
+  const request = await takeModelRequest('cycle');
+  if (!request.allowed) {
+    console.error('Daily cycle: no OpenRouter requests left today');
+    return failed;
+  }
   const completion = await requestCompletion({
     models: cycleModels(),
     messages: [
@@ -661,6 +674,7 @@ async function generate(date: string): Promise<Generated> {
   step('trends answered');
   if (!completion.ok) {
     console.error('Daily cycle: OpenRouter failed', completion.status, completion.error.code);
+    if (unanswered(completion.status)) await refundModelRequest(request);
     return failed;
   }
 

@@ -3,12 +3,13 @@ import { createAdminClient } from '../supabase/admin';
 import type { YouTubeTrends } from '../youtube';
 import type { EliasInsight } from './types';
 
-// Free-tier safeguards (50 requests/day on OpenRouter). The cache and the
-// per-user budget live in Supabase (elias_insight_cache, elias_usage), so every
-// server instance shares them. Without SUPABASE_SECRET_KEY they fall back to
-// this process's memory, which is only correct for a single server.
+// Free-tier safeguards (50 requests/day on OpenRouter). The cache lives in
+// Supabase (elias_insight_cache), so every server instance shares it; what a
+// fresh answer costs is counted in the shared request ledger (../modelLedger).
+// Without SUPABASE_SECRET_KEY the cache falls back to this process's memory,
+// which is only correct for a single server.
 // In-flight dedupe stays per instance: a duplicate across instances costs one
-// extra call, never an extra budget unit beyond the shared cap.
+// extra call, never a request beyond the ledger's limits.
 
 type Cached = { insight: EliasInsight; model: string; news: NewsContext; youtube: YouTubeTrends; expiresAt: number };
 type Payload = Omit<Cached, 'expiresAt'>;
@@ -26,17 +27,12 @@ function endOfDayInJakarta(now = Date.now()): number {
   return Math.floor((now + WIB_OFFSET) / DAY) * DAY + DAY - WIB_OFFSET;
 }
 
-/** Today's date in WIB as YYYY-MM-DD, the day elias_usage counts against. */
-function jakartaDate(now = Date.now()): string {
-  return new Date(now + WIB_OFFSET).toISOString().slice(0, 10);
-}
-
 let warnedMemoryOnly = false;
 function adminOrWarn() {
   const admin = createAdminClient();
   if (!admin && !warnedMemoryOnly) {
     warnedMemoryOnly = true;
-    console.warn('Elias cache: SUPABASE_SECRET_KEY is not set, so the cache and per-user limit are per instance only');
+    console.warn('Elias cache: SUPABASE_SECRET_KEY is not set, so the cache is per instance only');
   }
   return admin;
 }
@@ -106,52 +102,4 @@ export function dedupe<T>(key: string, run: () => Promise<T>): Promise<T> {
   const promise = run().finally(() => inFlight.delete(key));
   inFlight.set(key, promise);
   return promise;
-}
-
-// Keeps one account from spending the whole shared daily quota
-const USER_DAILY_LIMIT = Number(process.env.ELIAS_USER_DAILY_LIMIT) || 10;
-const memoryUsage = new Map<string, { count: number; resetsAt: number }>();
-
-/** `shared` says where the unit was counted, so a refund goes back to the same place. */
-export type Budget = { allowed: boolean; retryAfter: number; usageDate: string; shared: boolean };
-
-function takeMemoryBudget(userId: string, now: number): boolean {
-  let entry = memoryUsage.get(userId);
-  if (!entry || entry.resetsAt <= now) {
-    entry = { count: 0, resetsAt: endOfDayInJakarta(now) };
-    memoryUsage.set(userId, entry);
-  }
-  if (entry.count >= USER_DAILY_LIMIT) return false;
-  entry.count += 1;
-  return true;
-}
-
-/** Counts a fresh (uncached) generation; not allowed once the user is over today's limit. */
-export async function takeUserBudget(userId: string): Promise<Budget> {
-  const now = Date.now();
-  const retryAfter = Math.ceil((endOfDayInJakarta(now) - now) / 1000);
-  const usageDate = jakartaDate(now);
-  const admin = adminOrWarn();
-  if (!admin) return { allowed: takeMemoryBudget(userId, now), retryAfter, usageDate, shared: false };
-
-  // One atomic upsert: null back means the user was already at the limit
-  const { data, error } = await admin.rpc('take_elias_budget', { p_user_id: userId, p_limit: USER_DAILY_LIMIT });
-  if (error) {
-    // Falls back to this instance's count rather than locking everyone out
-    console.error('Elias budget: take failed', error.message);
-    return { allowed: takeMemoryBudget(userId, now), retryAfter, usageDate, shared: false };
-  }
-  return { allowed: data !== null, retryAfter, usageDate, shared: true };
-}
-
-/** Gives a budget unit back when the upstream call didn't produce an answer. */
-export async function refundUserBudget(userId: string, budget: Budget) {
-  const admin = budget.shared ? createAdminClient() : null;
-  if (admin) {
-    const { error } = await admin.rpc('refund_elias_budget', { p_user_id: userId, p_usage_date: budget.usageDate });
-    if (error) console.error('Elias budget: refund failed', error.message);
-    return;
-  }
-  const entry = memoryUsage.get(userId);
-  if (entry && entry.count > 0) entry.count -= 1;
 }

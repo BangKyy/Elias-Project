@@ -165,15 +165,30 @@ Env: `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `A
 - [ ] Briefing-memo template that opens with a claim (ED-3, V2)
 - [ ] Every send resolves one `brand_profile_id` + one recipient (ED-5)
 
-## MVP 7 — Chat with Elias · Phase 2
+## MVP 7 — Chat with Elias · V1 (moved from Phase 2)
 
 - [ ] Surface exists, follow-up on a card; full spec still open
 
-Not part of V1 (decided 23 Nov 2026): V1 launches without Chat, which stays in the header and the Terms page as "Segera". Chat is built after Phase 1 is done, because:
+Scope (decided 23 Nov 2026): for now Chat is only a follow-up on a card, not free-form questions.
 
-- At 50 OpenRouter requests a day Chat is only a demo (see Chat message limits below)
-- Phase 1's core isn't working yet: the morning email (MVP 6) doesn't send and the scheduled cycle build is on hold (see Hosting)
-- Its groundwork is already in place, so waiting costs nothing: the brand layer and `can_access_brand` (MVP 4), and the history and limit decisions below
+- [ ] Opened from a card only: an "Tanya Elias" action on the card (Beranda, and Arsip for saved trends); no empty chat box, and no entry from the header's Chat link without a card (it lists the user's earlier card threads instead)
+- [ ] Every thread belongs to exactly one card: `card_snapshot` is required
+- [ ] Questions off the card's topic get a short refusal in Elias's voice that points back to the card (system prompt plus an output check), so the chat doesn't turn into a general assistant on the free quota
+- Free-form questions may come later; they would need their own grounding (no card to anchor the answer) and their own limits
+
+Moved into V1 (decided 23 Nov 2026, reversing the earlier "Phase 2, not V1" call the same day): with few users, 50 OpenRouter requests a day is enough for a guarded first version. Built before the morning email (MVP 6) and the scheduled cycle build, which can still be added after it without rework, because:
+
+- Every model request (cycle, analysis, chat, email) is counted in one shared ledger with a reserve chat can never touch (see Shared request ledger below), so chat can't starve the 05:00 cycle or the morning email. OpenRouter's quota resets at 07:00 WIB, so an evening of chat would otherwise leave nothing for a 05:00 cycle
+- They don't share code or tables with Chat; the email and scheduled cycle keep their own blockers (a public URL for QStash, a verified Resend domain)
+- Order of work: shared request ledger → chat tables, RLS and 30-day purge → chat API route (sign-in, caps, card loaded on the server) → "Tanya Elias" on cards and the chat screen → Privacy and Terms updated, header link switched on
+
+Also to handle while building it:
+
+- [ ] Its own model list (`OPENROUTER_CHAT_MODELS`): today's list was picked for strict JSON, chat answers are plain text
+- [ ] Slow free models: a clear "Elias sedang menulis…" state (streaming if a model allows it); Vercel Hobby stops a function at 300 s
+- [ ] A card sent from the browser (Arsip entries older than 5 days) is size-capped and treated as data only; Beranda cards are loaded on the server by `insight_id`
+- [ ] Chat errors kept somewhere that outlives Vercel Hobby's 1-hour logs
+- [ ] Preview deployments have no env vars, so chat is tested locally or on production against the one database
 
 ### Chat history (decided 23 Nov 2026)
 
@@ -181,7 +196,7 @@ Saved for signed-in users, scoped to the brand, time-limited and deletable. Gues
 
 - Prerequisite: the minimal MVP 4 split (`brand_profile`) first, so history is keyed to `brand_profile_id` from day one (DM-4) instead of `profiles` — built 23 Nov 2026, see MVP 4
 - Chat tables use `public.can_access_brand(brand_profile_id)` in their RLS policies, so no thread or message of one brand is ever served for another (DM-6)
-- [ ] `chat_threads`: `id`, `brand_profile_id`, `user_id`, `insight_id` (nullable), `card_snapshot` jsonb (a copy of the card, since cards are purged after 5 days and Arsip lives on the device), `created_at`
+- [ ] `chat_threads`: `id`, `brand_profile_id`, `user_id`, `insight_id` (nullable: the card may already be purged), `card_snapshot` jsonb not null (a copy of the card, since cards are purged after 5 days and Arsip lives on the device; every thread is a follow-up on one card), `created_at`
 - [ ] `chat_messages`: `thread_id`, `role` (`user` | `elias`), `content`, `created_at`
 - [ ] RLS through `can_access_brand`: only the brand's owner reads or writes its rows; zero cross-brand hits (DM-6)
 - [ ] Account deletion cascades to threads and messages (`DELETE /api/account`)
@@ -211,9 +226,23 @@ that pool, so chat also gets a global cap and the cycle keeps a reserved share.
 | Reserved for cycle, retries, email | 25 | ~100 |
 
 - At 50/day Chat is a demo only. The $10 credit is a one-time top-up that lifts the free-model daily cap to 1,000 (OpenRouter policy as understood on 23 Nov 2026; check their limits page before relying on it)
-- [ ] Chat has its own per-user budget, separate from card analyses, so chatting never blocks analysing a new card; an env var like `ELIAS_CHAT_DAILY_LIMIT`, counted with an atomic take like `take_elias_budget`
-- [ ] Global chat cap per day, checked before the per-user one, so the reserved share for the cycle is never spent on chat
-- [ ] A failed answer (the model never replied) gives the unit back, as `refund_elias_budget` does for analyses
+- [ ] Chat has its own per-user budget, separate from card analyses, so chatting never blocks analysing a new card (`ELIAS_CHAT_DAILY_LIMIT`, counted in the shared ledger)
+- [ ] Global chat cap per day (`ELIAS_CHAT_TOTAL_LIMIT`), checked in the shared ledger with the reserve, so the share kept for the cycle and email is never spent on chat
+- [ ] A failed answer (the model never replied) gives the unit back through the ledger, as analyses do
+
+### Shared request ledger (decided 23 Nov 2026)
+
+One table, `model_requests`, records every OpenRouter request by kind (`cycle`, `analysis`, `chat`, `email`), so one place knows the day's total. `take_model_request` checks and records a request in one locked step, so two server instances can't both take the last unit; `refund_model_request` gives it back when no model answered (429 or 503).
+
+- The account-wide total (`OPENROUTER_DAILY_LIMIT`, default 50) counts OpenRouter's own day, from 00:00 UTC (07:00 WIB). Per-user limits count the WIB day, like the Elias cache
+- `cycle` and `email` may use the whole total; `analysis` and `chat` stop `ELIAS_RESERVED_REQUESTS` (default 25) short of it, so the cycle and the morning email always have their share
+- Per kind: `analysis` per user `ELIAS_USER_DAILY_LIMIT` (10); `chat` per user `ELIAS_CHAT_DAILY_LIMIT` (5) and in total `ELIAS_CHAT_TOTAL_LIMIT` (15)
+- Rows carry only the kind, the user and the time, never content; a deleted account's rows keep counting for the day (`on delete set null`). Purged after 30 days by pg_cron `purge-old-model-requests`
+- Without `SUPABASE_SECRET_KEY` (local dev) or when the database can't be reached, each server instance counts in memory, as before
+- [x] Ledger, cycle and analyses on it (`20261123110000_model_request_ledger.sql`, `src/lib/modelLedger.ts`)
+- [ ] Apply the migration, then deploy. Deploying first is safe too: until it exists every take falls back to memory
+- [ ] `elias_usage`, `take_elias_budget` and `refund_elias_budget` are no longer used once deployed; drop them in a later migration
+- [ ] Chat and the morning email take `chat` and `email` requests when they are built
 - [ ] Resets at midnight WIB, like the analysis limit and the Elias cache. OpenRouter's own quota resets at 07:00 WIB (00:00 UTC), which is why the reserve matters
 - [ ] Per-minute bursts (free models allow ~20 requests/minute) get their own "coba lagi sebentar" message, apart from "limit reached"
 - [ ] The UI shows what is left ("Sisa 12 pesan hari ini") and, at the limit, says so plainly in Elias's voice with the reset time
@@ -237,5 +266,8 @@ or a server, these stay open and are accepted for now:
 
 ## Cross-cutting
 
-- [ ] Do-not-translate glossary lookup (LN-1) — list blocked on 2.13
+- [x] Do-not-translate glossary lookup (LN-1), built 23 Nov 2026 with the seed list in `src/lib/glossary.ts` standing in for 2.13
+  - `cleanCopy` (every text field of cycle cards and Elias analyses) maps clear Indonesian translations back to the English term: "ajakan bertindak" → "CTA", "kesadaran merek" → "brand awareness", "takarir" → "caption", "korsel" → "carousel", and so on
+  - Only phrases that mean the marketing term and nothing else. "kampanye", "wawasan", "sudut pandang", "cerita", "umpan", "video pendek" and "tren" stay, and "keterlibatan" / "jangkauan" are only replaced next to an audience or a post, so "keterlibatan pejabat" and "di luar jangkauan" are untouched. Card tags are skipped: they are news search keywords
+- [ ] Open Question 2.13 still needs its answer: the final term list and who maintains it. Edit `doNotTranslate` and `translations` in `src/lib/glossary.ts` when it lands
 - [ ] Copy lint: no emoji, no exclamation marks, claim-first openings (V2, V3)

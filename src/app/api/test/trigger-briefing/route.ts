@@ -5,7 +5,7 @@ import { allowedTestRecipients, devToolsEnabled } from '@/lib/devTools';
 import { brandContextFor, fetchProfile } from '@/lib/elias/brandProfile';
 import { executionBrief } from '@/lib/elias/brief';
 import { briefingEmailHtml } from '@/lib/elias/briefingEmail';
-import { refundUserBudget, takeUserBudget } from '@/lib/elias/cache';
+import { refundModelRequest, takeModelRequest, unanswered } from '@/lib/modelLedger';
 import { generateInsight } from '@/lib/elias/openrouter';
 import type { InsightRequest } from '@/lib/elias/types';
 import { fetchNewsContext } from '@/lib/gdelt';
@@ -84,14 +84,16 @@ export async function POST(request: Request) {
   };
 
   // Same per-user cap as the Beranda card: a test run is a real OpenRouter request
-  const budget = await takeUserBudget(user.id);
-  if (!budget.allowed) return fail(429, 'Jatah analisis kamu untuk hari ini sudah habis.');
+  const modelRequest = await takeModelRequest('analysis', user.id);
+  if (!modelRequest.allowed) {
+    return fail(429, modelRequest.refused === 'user' ? 'Jatah analisis kamu untuk hari ini sudah habis.' : 'Batas harian model gratis sudah habis.');
+  }
 
   // Neither source can fail the run: problems come back as a status the prompt handles
   const [news, youtube] = await Promise.all([fetchNewsContext(input.targetTopic), fetchYouTubeTrends('ID', 3)]);
   const generated = await generateInsight(insightRequest, news, youtube);
   if (!generated.ok) {
-    if (generated.status === 429 || generated.status === 503) await refundUserBudget(user.id, budget);
+    if (unanswered(generated.status)) await refundModelRequest(modelRequest);
     return fail(500, `OpenRouter: ${generated.error.message}`);
   }
 
