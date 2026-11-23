@@ -20,7 +20,7 @@ type MotionTextProps = {
   id?: string;
   /** Seconds after the text scrolls into view, to sit behind a parent's entrance */
   delay?: number;
-  /** Words within `text` to set apart, e.g. Beranda's "5 Trend Hari Ini" in red */
+  /** Words within `text` to set apart, e.g. Beranda's "5 Tren Hari Ini" in red */
   accent?: { words: string; className: string };
 };
 
@@ -110,16 +110,22 @@ export default function MotionText({ text, effect, as: Tag = 'span', className, 
 
       if (effect === 'scramble') {
         const chars = gsap.utils.toArray<HTMLElement>('[data-char]', element);
-        // The rolls write into React's own text nodes, so a re-render still finds them
-        const nodes = chars.map((char) => char.firstChild as Text);
-        const finals = nodes.map((node) => node.data);
+        // The rolls write into React's own text nodes, so a re-render still finds
+        // them. The real letter is always read back from data-char, never kept
+        // from mount: when the text changes mid-roll React has already written
+        // the new letters by the time this cleans up, and restoring the old ones
+        // would mix both headlines into one ("dala 5ni Harik")
+        const write = (char: HTMLElement, glyph: string) => {
+          if (char.firstChild) (char.firstChild as Text).data = glyph;
+        };
+        const settle = (char: HTMLElement) => write(char, char.dataset.char ?? '');
 
         const play = contextSafe!(() => {
           const timeline = gsap.timeline({ delay });
           chars.forEach((char, i) => {
             const at = i * 0.03;
             timeline.set(char, { autoAlpha: 1 }, at);
-            const pool = rollFor(finals[i]);
+            const pool = rollFor(char.dataset.char ?? '');
             if (!pool) return;
             const roll = { step: 0 };
             let shown = -1;
@@ -135,10 +141,10 @@ export default function MotionText({ text, effect, as: Tag = 'span', className, 
                   const step = Math.floor(roll.step);
                   if (step === shown) return;
                   shown = step;
-                  nodes[i].data = pool[Math.floor(Math.random() * pool.length)];
+                  write(char, pool[Math.floor(Math.random() * pool.length)]);
                 },
                 onComplete: () => {
-                  nodes[i].data = finals[i];
+                  settle(char);
                   gsap.set(char, { clearProps: 'display,width,textAlign' });
                 },
               },
@@ -150,7 +156,7 @@ export default function MotionText({ text, effect, as: Tag = 'span', className, 
         const stop = onceCued(element, play);
         return () => {
           stop();
-          nodes.forEach((node, i) => (node.data = finals[i]));
+          chars.forEach(settle);
         };
       }
 
@@ -197,7 +203,7 @@ export default function MotionText({ text, effect, as: Tag = 'span', className, 
             >
               {effect === 'scramble'
                 ? Array.from(word).map((char, j) => (
-                    <span key={j} data-char>
+                    <span key={j} data-char={char}>
                       {char}
                     </span>
                   ))

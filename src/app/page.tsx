@@ -36,9 +36,9 @@ export const metadata: Metadata = {
   title: 'Beranda — Elias',
 };
 
-/** "Terdapat 5 Trend Hari Ini yang Cocok untuk Brand Kamu.": the count, never a greeting (V2). */
+/** "Terdapat 5 Tren Hari Ini yang Cocok untuk Brand Kamu.": the count, never a greeting (V2). */
 function headline(today: number, total: number, scoped: boolean): { text: string; accent: string } {
-  const accent = today ? `${today} Trend Hari Ini` : `${total} Trend dalam 5 Hari Terakhir`;
+  const accent = today ? `${today} Tren Hari Ini` : `${total} Tren dalam 5 Hari Terakhir`;
   return { text: `Terdapat ${accent} ${scoped ? 'yang Cocok untuk Brand Kamu.' : 'untuk Kamu Pantau.'}`, accent };
 }
 

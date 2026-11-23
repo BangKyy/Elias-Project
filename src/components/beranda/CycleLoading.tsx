@@ -195,7 +195,7 @@ export default function CycleLoading({ signedIn, arrived, onLeave }: CycleLoadin
               as="h1"
               effect="scramble"
               delay={0.25}
-              text="Elias Sedang Membaca Trend Hari ini"
+              text="Elias Sedang Membaca Tren Hari Ini"
               className="text-display-sm font-semibold max-md:tracking-normal md:text-display-lg"
             />
           </div>
