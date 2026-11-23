@@ -86,7 +86,7 @@ Later
   - Personal (`profiles`): account type, name, role, referral answers, onboarding progress, morning email time and Always On (settings of the person receiving the email, ED-5)
   - Brand (`brand_profiles`): category, target market, archetype, location / local focus, goals
   - The finished-onboarding check is split too: personal fields stay a check on `profiles`, the brand half is the `profiles_check_onboarding_brand` trigger
-- [ ] Apply in this order: `20261123090000_split_profiles.sql` (new tables, backfill, old columns kept) → deploy the code that reads `brand_profiles` → `20261123100000_drop_profile_brand_columns.sql`. Brand edits made through the old code between the first two steps are not copied over
+- [x] Applied in this order on 23 Nov 2026: `20261123090000_split_profiles.sql` (new tables, backfill, old columns kept) → deploy of `d97701a` → `20261123100000_drop_profile_brand_columns.sql`. Checked after: the six brand columns are gone from `profiles`, every profile has a brand profile, no finished user has an incomplete brand. Both were run outside the Supabase MCP, so they may be missing from Supabase's migration history; check before any `supabase db push`
 - [ ] All memory keyed to `brand_profile_id` (DM-4); `workspace_invite` reserved (DM-7)
   - [x] Elias cache keys carry the brand profile id (was the user id); `/api/elias/insight` checks the brand is the caller's with `ownsBrand`, and account deletion clears keys of both ids
   - [ ] Archive (with the move below) and chat history (MVP 7) keyed to it as they are built
