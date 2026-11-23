@@ -27,7 +27,7 @@ type SectionProps = { userId: string; profile: ProfileRecord };
 /** Personal layer (PR-1): who is using Elias. */
 export function PersonalSection({ userId, profile }: SectionProps) {
   const form = useProfileForm(
-    userId,
+    { table: 'profiles', id: userId },
     {
       name: profile.name ?? '',
       role: known(roleOptions, profile.role),
@@ -91,9 +91,9 @@ export function PersonalSection({ userId, profile }: SectionProps) {
 }
 
 /** Brand layer (PR-1): what Elias weighs every trend against. */
-export function BrandSection({ userId, profile }: SectionProps) {
+export function BrandSection({ profile }: SectionProps) {
   const form = useProfileForm(
-    userId,
+    { table: 'brand_profiles', id: profile.brandId },
     {
       category: profile.category ?? '',
       targetMarket: profile.target_market ?? '',
@@ -176,8 +176,12 @@ export function BrandSection({ userId, profile }: SectionProps) {
 }
 
 /** Goals (PR-2): they steer what Elias recommends. */
-export function GoalsSection({ userId, profile }: SectionProps) {
-  const form = useProfileForm(userId, { goals: profile.goals.filter((goal) => goalOptions.includes(goal)) }, ({ goals }) => ({ goals }));
+export function GoalsSection({ profile }: SectionProps) {
+  const form = useProfileForm(
+    { table: 'brand_profiles', id: profile.brandId },
+    { goals: profile.goals.filter((goal) => goalOptions.includes(goal)) },
+    ({ goals }) => ({ goals }),
+  );
   const { values, set } = form;
 
   return (
@@ -199,7 +203,7 @@ export function GoalsSection({ userId, profile }: SectionProps) {
 /** The morning email time and Always On (PR-5), on /profil/notifikasi. */
 export function NotificationSection({ userId, profile }: SectionProps) {
   const form = useProfileForm(
-    userId,
+    { table: 'profiles', id: userId },
     {
       // Postgres returns time as HH:MM:SS
       notificationTime: known(notificationTimeOptions, profile.notification_time?.slice(0, 5) ?? null),

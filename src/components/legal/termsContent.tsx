@@ -50,7 +50,7 @@ export const termsSections: LegalSection[] = [
       <>
         <P>
           Setiap hari Elias mengumpulkan sinyal dari sumber publik: Google Trends, YouTube, GDELT, Google News, situs berita Indonesia (antara lain
-          Antara, CNN Indonesia, detikNews, CNBC Indonesia, Republika, dan DailySocial), Wikipedia, GitHub, dan Reddit. Dari sinyal itu Elias
+          Antara, CNN Indonesia, detikNews, CNBC Indonesia, Republika, dan DailySocial), Wikipedia, dan GitHub. Dari sinyal itu Elias
           menyusun kartu tren di Beranda.
         </P>
         <P>

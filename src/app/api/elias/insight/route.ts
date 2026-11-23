@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAuthRetryableFetchError } from '@supabase/supabase-js';
+import { ownsBrand } from '@/lib/brandProfiles';
 import { isCreativeRole } from '@/lib/creativeRoles';
 import { dedupe, getCachedInsight, refundUserBudget, setCachedInsight, takeUserBudget } from '@/lib/elias/cache';
 import { executionBrief } from '@/lib/elias/brief';
@@ -179,7 +180,11 @@ export async function POST(request: Request) {
 
   // The brand id doubles as the cache key, so it must be the caller's own;
   // otherwise one account could read another's cached answers (DM-6)
-  if (insightRequest.brandContext.id !== user.id) {
+  const owned = await ownsBrand(supabase, user.id, insightRequest.brandContext.id);
+  if (owned === null) {
+    return fail(503, { code: 'upstream', message: 'Elias belum bisa memeriksa brand kamu. Periksa koneksi lalu coba lagi.' });
+  }
+  if (!owned) {
     return fail(403, { code: 'forbidden', message: 'Brand ini bukan milik akun kamu.' });
   }
 

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { brandFields, fetchBrandProfile } from '@/lib/brandProfiles';
 import { headerAccount } from '@/lib/headerAccount';
 import { profileColumns, type AccountInfo, type ProfileRecord } from '@/lib/profile';
 import { createClient } from '@/lib/supabase/server';
@@ -16,14 +17,18 @@ export async function loadProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select(profileColumns)
-    .eq('id', user.id)
-    .maybeSingle<ProfileRecord>();
+  const [{ data: personal, error }, brand] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select(profileColumns)
+      .eq('id', user.id)
+      .maybeSingle<Omit<ProfileRecord, keyof ReturnType<typeof brandFields>>>(),
+    fetchBrandProfile(supabase, user.id),
+  ]);
   if (error) console.error('Profile could not be read', error);
   // Every account gets a row at signup; without one there is nothing to edit yet
-  if (!profile) redirect('/onboarding/profile');
+  if (!personal) redirect('/onboarding/profile');
+  const profile: ProfileRecord = { ...personal, ...brandFields(brand) };
 
   const account: AccountInfo = {
     userId: user.id,

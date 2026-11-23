@@ -86,7 +86,7 @@ async function Beranda({ searchParams, user }: { searchParams: SearchParams; use
 
   const flavour: Flavour =
     user && profile
-      ? { role: creativeRoleFor(profile.role), archetype: profile.archetype, brand: brandContextFor(user.id, profile) }
+      ? { role: creativeRoleFor(profile.role), archetype: profile.archetype, brand: brandContextFor(profile) }
       : null;
   const time = profile?.notification_time?.slice(0, 5) ?? '06:00';
   // Switch for reviewing the no-signal branch (V6)

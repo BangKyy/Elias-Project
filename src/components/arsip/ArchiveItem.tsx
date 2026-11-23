@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { NotePencil, TrashSimple } from '@phosphor-icons/react';
-import type { ArchivedTrend, ArchivePriority, ArchiveReaction, ArchiveStatus } from '@/lib/archive';
+import type { ArchivedTrend, ArchivePriority, ArchiveStatus } from '@/lib/archive';
 import { savedOn } from '@/lib/archiveQuery';
 import { formatDate } from '@/lib/dates';
 import { parseBrief } from '@/lib/elias/brief';
@@ -18,7 +18,7 @@ type ArchiveItemProps = {
   canSetPriority: boolean;
   onStatus: (status: ArchiveStatus) => void;
   onPriority: (priority: ArchivePriority | null) => void;
-  onNote: (notes: string, reaction: ArchiveReaction | null) => void;
+  onNote: (notes: string) => void;
   onRemove: () => void;
   onPriorityLocked: () => void;
 };

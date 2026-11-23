@@ -6,6 +6,7 @@ import { Briefcase, CaretLeft, IdentificationBadge, MaskHappy, SquaresFour, Targ
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/supabase/errors';
 import { brandCategoryOptions } from '@/lib/brandCategories';
+import { missingBrandMessage } from '@/lib/brandProfiles';
 import { archetypeOptions as archetypes, roleOptions as roles } from '@/lib/profileOptions';
 import { targetMarkets } from '@/lib/targetMarkets';
 import { DropdownField, TextField, type FormStatus } from '../auth/fields';
@@ -24,7 +25,8 @@ export type ProfileAnswers = {
   local_focus: boolean;
 };
 
-export default function ProfileForm({ initial }: { initial: ProfileAnswers | null }) {
+/** `brandId` is where the brand answers go (brand_profiles); name and role stay on profiles. */
+export default function ProfileForm({ initial, brandId }: { initial: ProfileAnswers | null; brandId: string | null }) {
   const router = useRouter();
   const [name, setName] = useState(initial?.name ?? '');
   // Roles saved outside the list (old job titles, free text) start blank
@@ -65,22 +67,31 @@ export default function ProfileForm({ initial }: { initial: ProfileAnswers | nul
       return;
     }
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        name: name.trim(),
-        role,
-        category,
-        target_market: targetMarket,
-        archetype,
-        location: location.trim() || null,
-        local_focus: localFocus,
-      })
-      .eq('id', user.id)
-      .select('id')
-      .single();
+    if (!brandId) {
+      setSubmitting(false);
+      setStatus({ tone: 'error', text: missingBrandMessage });
+      return;
+    }
+
+    // Each layer saves on its own; a failed one is simply saved again on retry
+    const [{ error: personalError }, { error: brandError }] = await Promise.all([
+      supabase.from('profiles').update({ name: name.trim(), role }).eq('id', user.id).select('id').single(),
+      supabase
+        .from('brand_profiles')
+        .update({
+          category,
+          target_market: targetMarket,
+          archetype,
+          location: location.trim() || null,
+          local_focus: localFocus,
+        })
+        .eq('id', brandId)
+        .select('id')
+        .single(),
+    ]);
     setSubmitting(false);
 
+    const error = personalError ?? brandError;
     if (error) {
       setStatus({ tone: 'error', text: errorMessage(error) });
       return;

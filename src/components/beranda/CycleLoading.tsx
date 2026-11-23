@@ -22,7 +22,7 @@ const PACE_S = 30;
 // the per-role calls. Timed for a typical day, not tied to the real stages.
 // `parts` are read in turn, the current one highlighted
 const stages = [
-  { from: 0, lead: 'Sedang mengumpulkan sumber dari', parts: ['YouTube', 'Google', 'Reddit', 'Wikipedia', 'berita'] },
+  { from: 0, lead: 'Sedang mengumpulkan sumber dari', parts: ['YouTube', 'Google', 'Wikipedia', 'berita'] },
   { from: 10, lead: 'Sedang memilih', parts: ['tren yang relevan untuk hari ini'] },
   { from: 45, lead: 'Sedang menyusun', parts: ['rekomendasi untuk tiap peran'] },
 ];
@@ -44,7 +44,7 @@ function clock(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-/** "YouTube, Google, Reddit, dan berita" */
+/** "YouTube, Google, Wikipedia, dan berita" */
 function listJoiner(i: number, count: number): string {
   if (i === count - 1) return '';
   return i === count - 2 ? ', dan ' : ', ';

@@ -6,6 +6,7 @@ import { CalendarStar } from '@phosphor-icons/react';
 import { DEFAULT_ALWAYS_ON, isAlwaysOn, type AlwaysOn } from '@/lib/alwaysOn';
 import { goalOptions as goals, notificationTimeOptions as notificationTimes } from '@/lib/profileOptions';
 import { createClient } from '@/lib/supabase/client';
+import { missingBrandMessage } from '@/lib/brandProfiles';
 import { errorMessage } from '@/lib/supabase/errors';
 import { DropdownField, type FormStatus } from '../auth/fields';
 import BackLink from './BackLink';
@@ -18,7 +19,8 @@ export type GoalsAnswers = {
   always_on: string | null;
 };
 
-export default function GoalsForm({ initial }: { initial: GoalsAnswers | null }) {
+/** Goals belong to the brand (brand_profiles); the email time and Always On to the person (profiles). */
+export default function GoalsForm({ initial, brandId }: { initial: GoalsAnswers | null; brandId: string | null }) {
   const router = useRouter();
   // Kept in selection order: the first pick is the top priority
   const [selectedGoals, setSelectedGoals] = useState<string[]>(initial?.goals.filter((goal) => goals.includes(goal)) ?? []);
@@ -47,12 +49,22 @@ export default function GoalsForm({ initial }: { initial: GoalsAnswers | null })
       return;
     }
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ goals: selectedGoals, notification_time: notificationTime, always_on: alwaysOn })
-      .eq('id', user.id)
-      .select('id')
-      .single();
+    if (!brandId) {
+      setSubmitting(false);
+      setStatus({ tone: 'error', text: missingBrandMessage });
+      return;
+    }
+
+    const [{ error: brandError }, { error: personalError }] = await Promise.all([
+      supabase.from('brand_profiles').update({ goals: selectedGoals }).eq('id', brandId).select('id').single(),
+      supabase
+        .from('profiles')
+        .update({ notification_time: notificationTime, always_on: alwaysOn })
+        .eq('id', user.id)
+        .select('id')
+        .single(),
+    ]);
+    const error = brandError ?? personalError;
     if (error) {
       setSubmitting(false);
       setStatus({ tone: 'error', text: errorMessage(error) });

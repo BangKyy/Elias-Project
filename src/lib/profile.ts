@@ -1,10 +1,13 @@
-// Everything /profil reads and edits in public.profiles. Email and password
-// live in Supabase Auth (auth.users) and are changed through supabase.auth.
+// Everything /profil reads and edits: the personal layer in public.profiles
+// and the brand layer in public.brand_profiles, as one record. Email and
+// password live in Supabase Auth (auth.users) and are changed through supabase.auth.
 
-export const profileColumns =
-  'account_type, name, role, category, target_market, archetype, location, local_focus, goals, notification_time, always_on, created_at';
+/** The personal layer's columns; the brand's come from src/lib/brandProfiles.ts */
+export const profileColumns = 'account_type, name, role, notification_time, always_on, created_at';
 
 export type ProfileRecord = {
+  /** The brand_profiles row the Brand and Tujuan blocks save into; null if signup left none */
+  brandId: string | null;
   account_type: string | null;
   name: string | null;
   role: string | null;

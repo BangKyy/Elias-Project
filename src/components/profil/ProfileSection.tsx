@@ -3,6 +3,7 @@
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { CircleNotch } from '@phosphor-icons/react';
+import { missingBrandMessage } from '@/lib/brandProfiles';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/supabase/errors';
 import { FormMessage, type FormStatus } from '../auth/fields';
@@ -100,11 +101,14 @@ export function SectionForm({
   );
 }
 
+/** The row a block saves into: the personal layer (profiles) or the brand layer (brand_profiles). */
+export type ProfileTarget = { table: 'profiles' | 'brand_profiles'; id: string | null };
+
 /**
- * Edits a set of profile columns against a saved baseline. `values` is what
+ * Edits a set of columns of one row against a saved baseline. `values` is what
  * the form shows; `saved` moves forward only when the database accepted it.
  */
-export function useProfileForm<T extends Record<string, unknown>>(userId: string, initial: T, toRow: (values: T) => object) {
+export function useProfileForm<T extends Record<string, unknown>>(target: ProfileTarget, initial: T, toRow: (values: T) => object) {
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [saved, setSaved] = useState(initial);
@@ -115,9 +119,13 @@ export function useProfileForm<T extends Record<string, unknown>>(userId: string
   const set = <K extends keyof T>(key: K, value: T[K]) => setValues((current) => ({ ...current, [key]: value }));
 
   async function save() {
+    if (!target.id) {
+      setStatus({ tone: 'error', text: missingBrandMessage });
+      return;
+    }
     setSaving(true);
     setStatus(null);
-    const { error } = await createClient().from('profiles').update(toRow(values)).eq('id', userId).select('id').single();
+    const { error } = await createClient().from(target.table).update(toRow(values)).eq('id', target.id).select('id').single();
     setSaving(false);
     if (error) {
       setStatus({ tone: 'error', text: errorMessage(error) });

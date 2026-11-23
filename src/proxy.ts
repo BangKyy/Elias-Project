@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
-import { nextOnboardingStep, onboardingColumns, onboardingSteps, type OnboardingProgress } from '@/lib/onboarding';
+import { fetchOnboardingProgress, nextOnboardingStep, onboardingSteps } from '@/lib/onboarding';
 import { REMEMBER_COOKIE, sessionCookieOptions } from '@/lib/supabase/remember';
 
 // Only for signed-out visitors; signed-in users are sent on into the app
@@ -86,12 +86,7 @@ export async function proxy(request: NextRequest) {
     return isGuestPage || publicPaths.includes(path) ? response : redirect(request, response, '/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select(onboardingColumns)
-    .eq('id', user.id)
-    .maybeSingle<OnboardingProgress>();
-  const step = nextOnboardingStep(profile);
+  const step = nextOnboardingStep(await fetchOnboardingProgress(supabase, user.id));
 
   if (step) {
     // Earlier steps stay reachable through the back links

@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   if (!profile) return fail(400, 'Lengkapi profil brand dulu: briefing dibuat untuk brand kamu.');
 
   const insightRequest: InsightRequest = {
-    brandContext: brandContextFor(user.id, profile),
+    brandContext: brandContextFor(profile),
     trendTopic: input.targetTopic,
     userRole: creativeRoleFor(profile.role),
     newsKeywords: [input.targetTopic],

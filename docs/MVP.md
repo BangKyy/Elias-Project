@@ -69,7 +69,7 @@ High priority
 - [ ] Production needs `SUPABASE_SECRET_KEY` for account deletion; without it the route answers 503
 - [ ] With "Secure password change" on, Supabase asks for a reauthentication code: add the OTP step instead of only showing the error
 - [ ] Archive copies on other devices survive account deletion until the archive moves to the database (MVP 4)
-- [ ] Re-point the brand block at `brand_profile` once MVP 4 splits `profiles`
+- [x] Re-point the brand block at `brand_profile` once MVP 4 splits `profiles`: Brand and Tujuan save to `brand_profiles`, Data Diri and Email Pagi to `profiles`
 
 Later
 - [ ] Download my data (profile + archive as JSON)
@@ -80,12 +80,20 @@ Later
 
 ## MVP 4 — Data model · Phase 1 · DM-1 to DM-8
 
-- [ ] `user → workspace → brand_profile` in schema; workspace created silently at signup
-- [ ] One brand profile per workspace, capped in app logic only (DM-2)
-- [ ] Split today's `profiles` table into personal layer + brand layer
+- [x] `user → workspace → brand_profile` in schema; workspace created silently at signup (`handle_new_user` creates profile, workspace and brand profile)
+- [x] One brand profile per workspace, capped in app logic only (DM-2): no unique constraint, the app reads the oldest (`fetchBrandProfile`, `src/lib/brandProfiles.ts`)
+- [x] Split today's `profiles` table into personal layer + brand layer
+  - Personal (`profiles`): account type, name, role, referral answers, onboarding progress, morning email time and Always On (settings of the person receiving the email, ED-5)
+  - Brand (`brand_profiles`): category, target market, archetype, location / local focus, goals
+  - The finished-onboarding check is split too: personal fields stay a check on `profiles`, the brand half is the `profiles_check_onboarding_brand` trigger
+- [ ] Apply in this order: `20261123090000_split_profiles.sql` (new tables, backfill, old columns kept) → deploy the code that reads `brand_profiles` → `20261123100000_drop_profile_brand_columns.sql`. Brand edits made through the old code between the first two steps are not copied over
 - [ ] All memory keyed to `brand_profile_id` (DM-4); `workspace_invite` reserved (DM-7)
+  - [x] Elias cache keys carry the brand profile id (was the user id); `/api/elias/insight` checks the brand is the caller's with `ownsBrand`, and account deletion clears keys of both ids
+  - [ ] Archive (with the move below) and chat history (MVP 7) keyed to it as they are built
 - [ ] Saved trends move from device storage to the database for account holders
 - [ ] Structural test: two brands, zero cross-brand hits at the query layer (DM-6)
+  - DM-6 at the database: RLS on `workspaces` and `brand_profiles` checks ownership through the workspace, and `public.can_access_brand(brand_profile_id)` is the one check every brand-keyed table uses in its policies (chat tables included). Clients can't insert brands or move one to another workspace (only the answer columns are updatable). App reads also filter on the workspace owner, so they hold even through the admin client
+  - Checked on 23 Nov 2026 by running every migration on an in-memory Postgres (PGlite) with two users: each reads and updates only their own brand, `can_access_brand` is false for the other's. Not yet a committed test the repo runs
 
 ## MVP 5 — Ingestion and synthesis · Phase 1
 
@@ -98,10 +106,8 @@ Later
   - [x] Google Trends (`src/lib/googleTrends.ts`): the public "Trending now" RSS for Indonesia (10 newest searches, ~2 hours, traffic level + 3 news links each); `google-trends-api` is unusable (its daily endpoint answers 404)
     - Captured at most once an hour on any Beranda visit and by the cycle, merged into `google_trends_snapshots` per term per WIB day (`src/lib/insights/searchTrends.ts`); kept 30 days by pg_cron `purge-old-google-trends`
     - The prompt gets up to 20 searches seen in the last 24h as `<search_trends>` (`G1`…), with traffic level, start time, "N hari berturut-turut" streak and news titles; evidence links to the term's Trends explore page
-    - [ ] Capture hourly from a cron instead of visits (with the warm-up cron), so quiet hours aren't missed
-  - [x] Reddit (`src/lib/reddit.ts`): public Atom RSS of r/indonesia's top posts of the day (`REDDIT_SUBREDDITS` overrides), one request per cycle, cached 1h, 15-min backoff after a 429. Titles, permalinks and text excerpts only (no scores or comment counts); links stripped from excerpts so no X/Instagram content reaches the prompt
-    - The prompt gets up to 15 posts as `<reddit>` (`R1`…); a Reddit-only trend is "watch" at most, and a card is a Reddit card (Tier 2, hidden from guests) only when most of its evidence is Reddit
-    - [ ] Reddit's Data API terms: confirm RSS use is allowed for this product, or move to OAuth with a registered app
+    - [ ] Capture hourly from a cron instead of visits (with the warm-up cron), so quiet hours aren't missed — on hold, see Hosting
+  - Reddit removed as a source (23 Nov 2026): `src/lib/reddit.ts` deleted, no `<reddit>` block in the prompt. Reddit answered unauthenticated requests with 403/404 by 19 Nov, and its Data API terms for this use were never confirmed. `reddit` stays a `SourceId` (and allowed in `insights.source`) so cards and Arsip entries saved earlier still render; nothing new is tagged with it. Bringing it back means a registered OAuth app (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`) and a terms check first
   - [x] Wikipedia (`src/lib/wikimedia.ts`): Wikimedia Pageviews "top" API for id.wikipedia, no key. Yesterday's UTC day (the day before while yesterday isn't published), human views only; main page, search, special and other non-article pages dropped, and so are bot-looking titles (domain endings like `.at`, single characters, bare numbers or symbols); top 20 kept, cached until the next UTC day
     - The prompt gets them as `<wikipedia>` (`W1`…) with Wikimedia's rank and views; a Wikipedia-only trend is "watch" at most and no reason is given from a title alone. Cards resting mainly on it are Wikipedia cards (Tier 1)
     - [x] `20261119090000_insight_wikipedia_source.sql` applied 19 Nov 2026 (`wikipedia` allowed in `insights.source`); the store's Google Trends fallback stays for databases without it
@@ -109,14 +115,14 @@ Later
     - Local (last 24h, max 15, one outlet at a time): Antara, CNN Indonesia, detikNews, CNBC Indonesia, Republika, Tempo. Industry (last 48h, max 12): Marketeers, MIX Marcomm and SWA through a Google News `site:` feed (no direct feed for non-browsers), CNBC Indonesia Tech and Lifestyle, DailySocial
     - No usable feed on 6 Nov 2026: Kompas, Liputan6, Kumparan, Suara, IDN Times, Kontan, Bisnis
     - The prompt gets `<local_news>` (`L1`…) and `<industry_news>` (`M1`…); news alone is context, and one company's announcement is never a card. Cards resting mainly on them have source `news` ("Media Indonesia", Tier 1)
-    - [ ] Apply `20261106090000_insight_news_source.sql`; until then those cards are saved as `gdelt`
+    - [x] `news` allowed in `insights.source`: `20261106090000_insight_news_source.sql` is superseded by the Wikipedia and GitHub migrations, whose lists include it; `news` and `github` cards seen stored on 23 Nov 2026, so `20261119120000_insight_github_source.sql` is applied too
 - [x] Generation cycle (`src/lib/insights/live.ts`): first request of the WIB day builds it, fixed until the next day; Beranda no longer reads `mock.ts`
   - Two stages on OpenRouter: one call picks up to 12 trends citing input ids (10 kept per day), then 7 parallel per-role calls write recommendations (8 requests/day)
   - Cards carry only measured movement (views gained, rank change, new on chart vs. the previous stored day), never percentages or life-cycle claims. Each card links its evidence (videos/articles)
   - Failure shows "Feed hari ini belum tersedia" (never sample cards) and retries after 10 minutes
   - [x] Store each cycle in `insight_cycles` / `insights` (written with `SUPABASE_SECRET_KEY`; without it today's cycle stays in memory only)
   - [x] Keep 5 days: read policy hides older cycles, pg_cron job `purge-old-insights` deletes them at 00:05 WIB
-  - [ ] Warm the cycle from the cron instead of the first visit (~2.5 min wait)
+  - [ ] Warm the cycle from the cron instead of the first visit (~2.5 min wait) — on hold, see Hosting
   - [x] Daily snapshots (`youtube_chart_snapshots`, `src/lib/insights/snapshots.ts`): every chart place saved once per WIB day, compared with the newest earlier day (up to 7 days back); kept 30 days by pg_cron `purge-old-youtube-snapshots`
   - [ ] Not yet seen live: a cycle comparing against a stored day (migration applied 2026-11-04; needs two days of cycles)
 - [x] Explicit no-signal branch feeding the quiet-day state (V6): an empty trend list from the model is a quiet day
@@ -137,7 +143,7 @@ Later
 - [x] Card: `ARCHETYPE // ROLE` and `// SOURCE` badges, So what, Make It Today brief, context accordion with thumbnails
 - [x] Response also carries `result`, `recommendation_status` (EXECUTE_TODAY / WATCH / SKIP), `action_format`, `youtubeData`
 - [x] Full chain verified live once (YouTube + OpenRouter; GDELT degraded to its note)
-- [ ] Server cache and per-user cap live in process memory; move to DB/KV before running on more than one instance
+- [x] Server cache and per-user cap shared in the database (`elias_insight_cache`, `elias_usage` with the atomic `take_elias_budget`, `20261104130000_elias_insight_cache.sql`), so every server instance sees the same answers and limit. Process memory is only the fallback when `SUPABASE_SECRET_KEY` is missing (local dev), and then each instance counts on its own
 
 Env: `OPENROUTER_API_KEY` (required), `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SITE_NAME`, optional `OPENROUTER_MODELS`, `OPENROUTER_CYCLE_MODELS` (daily cycle), `ELIAS_USER_DAILY_LIMIT`.
 
@@ -162,6 +168,62 @@ Env: `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `A
 ## MVP 7 — Chat with Elias · Phase 2
 
 - [ ] Surface exists, follow-up on a card; full spec still open
+
+### Chat history (decided 23 Nov 2026)
+
+Saved for signed-in users, scoped to the brand, time-limited and deletable; never saved for guests.
+
+- Prerequisite: the minimal MVP 4 split (`brand_profile`) first, so history is keyed to `brand_profile_id` from day one (DM-4) instead of `profiles` — built 23 Nov 2026, see MVP 4
+- Chat tables use `public.can_access_brand(brand_profile_id)` in their RLS policies, so no thread or message of one brand is ever served for another (DM-6)
+- [ ] `chat_threads`: `id`, `brand_profile_id`, `user_id`, `insight_id` (nullable), `card_snapshot` jsonb (a copy of the card, since cards are purged after 5 days and Arsip lives on the device), `created_at`
+- [ ] `chat_messages`: `thread_id`, `role` (`user` | `elias`), `content`, `created_at`
+- [ ] RLS through `can_access_brand`: only the brand's owner reads or writes its rows; zero cross-brand hits (DM-6)
+- [ ] Account deletion cascades to threads and messages (`DELETE /api/account`)
+- [ ] Retention 30 days of inactivity, purged by pg_cron like `purge-old-insights`; "Hapus percakapan" deletes a thread at once
+- [ ] Guests: history lives in the tab only, nothing on the server (or no Chat for guests at all, to protect the free quota)
+- [ ] Only the last 6–10 messages plus `card_snapshot` go to the model, not the whole thread (free-model context and latency)
+- [ ] Own daily limit per user: see Chat message limits below
+- [ ] Stored user text is resent as data, never instructions; V3 output rules enforced in code as for insights
+- [ ] Privacy and Terms updated before launch: messages are stored for 30 days and sent to OpenRouter (today's Privacy page says only brand information is); a one-line note in the chat UI not to type confidential information
+- [ ] Check each model in `OPENROUTER_MODELS` for prompt logging or training by its provider (free-tier providers may do either); UU PDP (No. 27/2022) needs purpose, retention period and deletion, covered above
+
+### Chat message limits (decided 23 Nov 2026)
+
+Every chat message is one OpenRouter request from the same account-wide daily pool as the cycle (8 a day, more on retries),
+card analyses (`ELIAS_USER_DAILY_LIMIT`, default 10 per user) and the morning email. A per-user cap alone can't protect
+that pool, so chat also gets a global cap and the cycle keeps a reserved share.
+
+| | Free tier today (50 requests/day) | After a one-time $10 OpenRouter credit (1,000/day) |
+|---|---|---|
+| Per user per day | 5 | 20 |
+| Per conversation | 5 | 10 |
+| All chat, all users | 15/day | ~600/day |
+| Reserved for cycle, retries, email | 25 | ~100 |
+
+- At 50/day Chat is a demo only. The $10 credit is a one-time top-up that lifts the free-model daily cap to 1,000 (OpenRouter policy as understood on 23 Nov 2026; check their limits page before relying on it)
+- [ ] Chat has its own per-user budget, separate from card analyses, so chatting never blocks analysing a new card; an env var like `ELIAS_CHAT_DAILY_LIMIT`, counted with an atomic take like `take_elias_budget`
+- [ ] Global chat cap per day, checked before the per-user one, so the reserved share for the cycle is never spent on chat
+- [ ] A failed answer (the model never replied) gives the unit back, as `refund_elias_budget` does for analyses
+- [ ] Resets at midnight WIB, like the analysis limit and the Elias cache. OpenRouter's own quota resets at 07:00 WIB (00:00 UTC), which is why the reserve matters
+- [ ] Per-minute bursts (free models allow ~20 requests/minute) get their own "coba lagi sebentar" message, apart from "limit reached"
+- [ ] The UI shows what is left ("Sisa 12 pesan hari ini") and, at the limit, says so plainly in Elias's voice with the reset time
+- Limits are per user for now; whether an agency workspace shares one budget is decided with `workspace_invite` (DM-7)
+- If chat moves to paid models, the limit becomes a cost question and the number of history messages sent per request is the main lever
+
+## Hosting — known gaps (no own domain or VPS yet)
+
+Production runs on Vercel Hobby at `https://elias-demo.vercel.app` (project `elias`). Until there is a domain
+or a server, these stay open and are accepted for now:
+
+- [ ] Daily cycle is built by the first visitor of the WIB day (~2.5 min wait), not by a scheduled warm-up
+  - Hobby stops a function at 300 s while `CYCLE_DEADLINE_MS` is 6 min, so a slow cycle can be cut off; lower the deadline below 300 s when the warm-up route is built
+- [ ] Google Trends is captured only on visits, so quiet hours (mostly night) are missed
+- Plan once unblocked: QStash schedules `POST /api/cron/warm-cycle` daily ~05:00 WIB (`0 22 * * *` UTC) and `POST /api/cron/capture-trends` hourly, both signature-checked like `/api/cron/daily-briefing`, awaiting their work and answering 500 on failure so QStash retries. Vercel Cron on Hobby runs once a day only, so it can't do the hourly capture
+  - QStash only needs a public URL, so `elias-demo.vercel.app` would already do; `APP_BASE_URL` must then be that URL, not localhost
+- [ ] Email only reaches the Resend account owner: a sending domain can't be verified without an own domain (see MVP 6)
+- [ ] Supabase Auth Site URL and Redirect URLs must include `https://elias-demo.vercel.app/auth/callback`, or confirmation and email-change links point at localhost
+- Runtime logs are kept 1 hour on Hobby, so a failed overnight cycle leaves no trace by morning
+- [x] Production secrets in Vercel marked Sensitive (23 Nov 2026): `SUPABASE_SECRET_KEY`, `OPENROUTER_API_KEY`, `YOUTUBE_API_KEY`, `QSTASH_TOKEN`, both QStash signing keys, `RESEND_API_KEY`, `VAPID_PRIVATE_KEY`
 
 ## Cross-cutting
 

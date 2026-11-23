@@ -1,23 +1,20 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { TextB, ThumbsDown, ThumbsUp, X, type Icon } from '@phosphor-icons/react';
-import type { ArchivedTrend, ArchiveReaction } from '@/lib/archive';
-
-const reactions: { value: ArchiveReaction; label: string; icon: Icon; active: string }[] = [
-  { value: 'like', label: 'Suka', icon: ThumbsUp, active: 'border-success-strong bg-success-surface text-success-strong' },
-  { value: 'dislike', label: 'Tidak suka', icon: ThumbsDown, active: 'border-error bg-error/10 text-error' },
-];
+import { TextB, X } from '@phosphor-icons/react';
+import type { ArchivedTrend } from '@/lib/archive';
+import { joinBrief, splitBrief } from '@/lib/elias/brief';
 
 type NoteEditorProps = {
   item: ArchivedTrend;
-  onSave: (notes: string, reaction: ArchiveReaction | null) => void;
+  onSave: (notes: string) => void;
   onClose: () => void;
 };
 
 /**
- * Popup for a saved trend's note and whether it turned out useful. Mount it
- * only while open: it starts from the saved values and opens itself.
+ * Popup for a saved trend's note. Mount it only while open: it starts from
+ * the saved note and opens itself. A brief saved from Elias is edited as the
+ * note box shows it; its header and news context stay as they were.
  */
 export default function NoteEditor({ item, onSave, onClose }: NoteEditorProps) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -25,9 +22,10 @@ export default function NoteEditor({ item, onSave, onClose }: NoteEditorProps) {
   const notesId = useId();
   const hintId = useId();
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const [draft, setDraft] = useState(item.notes);
-  const [reaction, setReaction] = useState<ArchiveReaction | null>(item.reaction ?? null);
-  const dirty = draft.trim() !== item.notes || reaction !== (item.reaction ?? null);
+  const [brief] = useState(() => splitBrief(item.notes));
+  const initial = brief ? brief.shown : item.notes;
+  const [draft, setDraft] = useState(initial);
+  const dirty = draft.trim() !== initial;
 
   useEffect(() => {
     ref.current?.showModal();
@@ -56,7 +54,7 @@ export default function NoteEditor({ item, onSave, onClose }: NoteEditorProps) {
   }
 
   function save() {
-    if (dirty) onSave(draft.trim(), reaction);
+    if (dirty) onSave(brief ? joinBrief(brief, draft.trim()) : draft.trim());
     onClose();
   }
 
@@ -115,7 +113,7 @@ export default function NoteEditor({ item, onSave, onClose }: NoteEditorProps) {
             id={notesId}
             aria-describedby={hintId}
             autoFocus
-            rows={5}
+            rows={brief ? 10 : 5}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -134,30 +132,6 @@ export default function NoteEditor({ item, onSave, onClose }: NoteEditorProps) {
             Tulis <code className="font-mono">**teks**</code> atau tekan <strong>Ctrl+B</strong> untuk menebalkan poin penting.
           </p>
         </div>
-
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-medium text-gray-600">Tren ini berguna untuk brand kamu?</legend>
-          <div className="flex gap-2">
-            {reactions.map(({ value, label, icon: ReactionIcon, active }) => {
-              const pressed = reaction === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={pressed}
-                  // Pressing the chosen one again clears it
-                  onClick={() => setReaction(pressed ? null : value)}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors ${
-                    pressed ? active : 'border-neutral-200 text-neutral-700 hover:border-txt-black hover:text-txt-black'
-                  }`}
-                >
-                  <ReactionIcon size={18} weight={pressed ? 'fill' : 'regular'} aria-hidden />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
 
         <div className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-4">
           <button

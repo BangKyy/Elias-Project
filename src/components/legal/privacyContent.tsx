@@ -97,7 +97,7 @@ export const privacySections: LegalSection[] = [
         </List>
         <P>
           Untuk menyusun kartu tren, server Elias juga mengambil data publik dari Google Trends, YouTube, GDELT, Google News, situs berita,
-          Wikipedia, GitHub, dan Reddit. Permintaan itu memakai kata kunci tren, bukan data pribadi kamu.
+          Wikipedia, dan GitHub. Permintaan itu memakai kata kunci tren, bukan data pribadi kamu.
         </P>
       </>
     ),

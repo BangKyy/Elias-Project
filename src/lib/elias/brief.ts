@@ -96,3 +96,35 @@ export function parseBrief(note: string): ParsedBrief | null {
     extra: [...(unknown.length ? [unknown.join('\n')] : []), ...added].join('\n\n'),
   };
 }
+
+export type BriefParts = {
+  /** "MAKE IT TODAY", Tren, Keputusan and Peran: hidden by the note box */
+  header: string;
+  /** Headline onwards, what the note box shows */
+  shown: string;
+  /** The news and YouTube context executionBrief appends, also hidden */
+  context: string;
+};
+
+const isContext = (block: string) => /^(Konteks berita|Trending YouTube)/.test(block);
+
+/**
+ * A brief note split for the note editor, so it edits only what Arsip's note
+ * box shows. Null when the note isn't a brief.
+ */
+export function splitBrief(note: string): BriefParts | null {
+  if (!parseBrief(note)) return null;
+  const lines = note.split('\n');
+  const headerEnd = lines.indexOf('', 1);
+  const blocks = lines.slice(headerEnd + 1).join('\n').split(/\n{2,}/);
+  return {
+    header: lines.slice(0, headerEnd).join('\n'),
+    shown: blocks.filter((block) => !isContext(block)).join('\n\n'),
+    context: blocks.filter(isContext).join('\n\n'),
+  };
+}
+
+/** The edited text put back between the parts the editor hid; empty clears the note. */
+export function joinBrief({ header, context }: BriefParts, shown: string): string {
+  return shown ? [header, shown, context].filter(Boolean).join('\n\n') : '';
+}

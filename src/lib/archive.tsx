@@ -193,13 +193,6 @@ export function useArchive() {
       [update],
     ),
 
-    /** The note and the like/dislike from the note editor, saved together */
-    setNoteAndReaction: useCallback(
-      (insightId: string, notes: string, reaction: ArchiveReaction | null) =>
-        update(insightId, (item) => ({ ...item, notes, reaction })),
-      [update],
-    ),
-
     /** Prototype only: adds sample entries that aren't already saved */
     seed: useCallback(
       (samples: ArchivedTrend[]) => {

@@ -1,5 +1,6 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { archetypeDirections } from './archetypes';
+import { fetchBrandProfile } from './brandProfiles';
 import { brandCategoryLabels, isBrandCategory } from './brandCategories';
 import { creativeRoleLabels, isCreativeRole } from './creativeRoles';
 import { formatDate } from './dates';
@@ -18,16 +19,16 @@ export type HeaderAccount = {
 /** Reads the header's account facts for a page; null for guests. */
 export async function headerAccount(supabase: SupabaseClient, user: User | null): Promise<HeaderAccount | null> {
   if (!user) return null;
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('name, role, archetype, category')
-    .eq('id', user.id)
-    .maybeSingle<{ name: string | null; role: string | null; archetype: string | null; category: string | null }>();
+  const [{ data: profile, error }, brand] = await Promise.all([
+    supabase.from('profiles').select('name, role').eq('id', user.id).maybeSingle<{ name: string | null; role: string | null }>(),
+    fetchBrandProfile(supabase, user.id),
+  ]);
   // The panel still works without the profile row: email and join date come from Auth
   if (error) console.error('Header account: profile read failed', error.message);
 
   const email = user.email ?? '';
-  const { role, archetype, category } = profile ?? {};
+  const role = profile?.role;
+  const { archetype, category } = brand ?? {};
   const persona = [
     isCreativeRole(role) ? creativeRoleLabels[role] : null,
     archetype ? (archetypeDirections[archetype]?.name ?? null) : null,
