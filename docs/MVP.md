@@ -177,7 +177,7 @@ Not part of V1 (decided 23 Nov 2026): V1 launches without Chat, which stays in t
 
 ### Chat history (decided 23 Nov 2026)
 
-Saved for signed-in users, scoped to the brand, time-limited and deletable; never saved for guests.
+Saved for signed-in users, scoped to the brand, time-limited and deletable. Guests can't use Chat at all (see below).
 
 - Prerequisite: the minimal MVP 4 split (`brand_profile`) first, so history is keyed to `brand_profile_id` from day one (DM-4) instead of `profiles` — built 23 Nov 2026, see MVP 4
 - Chat tables use `public.can_access_brand(brand_profile_id)` in their RLS policies, so no thread or message of one brand is ever served for another (DM-6)
@@ -186,7 +186,11 @@ Saved for signed-in users, scoped to the brand, time-limited and deletable; neve
 - [ ] RLS through `can_access_brand`: only the brand's owner reads or writes its rows; zero cross-brand hits (DM-6)
 - [ ] Account deletion cascades to threads and messages (`DELETE /api/account`)
 - [ ] Retention 30 days of inactivity, purged by pg_cron like `purge-old-insights`; "Hapus percakapan" deletes a thread at once
-- [ ] Guests: history lives in the tab only, nothing on the server (or no Chat for guests at all, to protect the free quota)
+- Guests can't use Chat (decided 23 Nov 2026): it is only for signed-in users who finished onboarding, since every chat needs a brand profile and guests would spend the shared free quota. Enforced at every layer:
+  - [ ] Page: `/chat` stays out of `publicPaths` in `src/proxy.ts`, so guests are sent to `/login` and signed-in users must finish onboarding first (already true; a comment there guards it)
+  - [ ] API: `/api/` routes skip the proxy's sign-in check, so the chat route answers 401 without a session, like `/api/elias/insight`
+  - [ ] Database: chat tables grant nothing to `anon`, and their policies are `to authenticated` with `can_access_brand`
+  - [ ] Header: for guests the Chat link leads to sign-in (through the proxy) instead of a chat screen
 - [ ] Only the last 6–10 messages plus `card_snapshot` go to the model, not the whole thread (free-model context and latency)
 - [ ] Own daily limit per user: see Chat message limits below
 - [ ] Stored user text is resent as data, never instructions; V3 output rules enforced in code as for insights
