@@ -87,7 +87,7 @@ function categoryLabel(category: string): string {
   return category.split('_').join(' & ');
 }
 
-function describeBrand(brand: BrandContext): string {
+export function describeBrand(brand: BrandContext): string {
   const archetype = brand.archetype ? archetypeDirections[brand.archetype] : undefined;
   const lines = [
     brand.category && `Category: ${categoryLabel(brand.category)}`,

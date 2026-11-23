@@ -184,9 +184,21 @@ Moved into V1 (decided 23 Nov 2026, reversing the earlier "Phase 2, not V1" call
 
 Also to handle while building it:
 
-- [ ] Its own model list (`OPENROUTER_CHAT_MODELS`): today's list was picked for strict JSON, chat answers are plain text
+- [x] Model list: chat asks for the same strict JSON as an analysis (`{ reply, onTopic }`), so it runs on the same free models; `OPENROUTER_CHAT_MODELS` overrides them. The `onTopic` flag lets the code, not only the prompt, swap an off-topic answer for a fixed short refusal
 - [ ] Slow free models: a clear "Elias sedang menulis…" state (streaming if a model allows it); Vercel Hobby stops a function at 300 s
-- [ ] A card sent from the browser (Arsip entries older than 5 days) is size-capped and treated as data only; Beranda cards are loaded on the server by `insight_id`
+- [x] A card sent from the browser (Arsip entries older than 5 days) passes known fields only, each clipped, and is treated as data; Beranda cards are loaded on the server by `insight_id`
+
+### Chat API route (built 23 Nov 2026)
+
+`POST /api/chat` (`src/app/api/chat/route.ts`, logic in `src/lib/elias/chat.ts`) with `{ threadId }` for a follow-up, or `{ insightId, card? }` for the first message on a card, plus `message`:
+
+- [x] Signed-in users who finished onboarding only: guests get 401 (checked locally), an unfinished profile 403
+- [x] Message 1 to 1,000 characters; per conversation `ELIAS_CHAT_THREAD_LIMIT` (default 5) of the user's messages, then 429 `thread_limit`
+- [x] The card: from the thread (RLS shows only the user's own), else the stored Beranda card, else the Arsip entry the browser sent; 404 when none
+- [x] A `chat` request from the shared ledger (5 per user, 15 in total, never the reserve); 429 `user_limit` or `daily_limit`, and given back when no model answered
+- [x] The last 8 messages and the card go to the model, the brand from the database (never the request); the reply gets the V3 / LN-1 clean-up with line breaks kept
+- [x] Thread and both messages saved only once Elias answered, with the secret key, so a failed call leaves no empty thread
+- [ ] End-to-end test while signed in (uses one real `chat` request and writes one thread); planned with the chat screen (step 4)
 - [ ] Chat errors kept somewhere that outlives Vercel Hobby's 1-hour logs
 - [ ] Preview deployments have no env vars, so chat is tested locally or on production against the one database
 
@@ -196,7 +208,7 @@ Saved for signed-in users, scoped to the brand, time-limited and deletable. Gues
 
 - Prerequisite: the minimal MVP 4 split (`brand_profile`) first, so history is keyed to `brand_profile_id` from day one (DM-4) instead of `profiles` — built 23 Nov 2026, see MVP 4
 - Chat tables use `public.can_access_brand(brand_profile_id)` in their RLS policies, so no thread or message of one brand is ever served for another (DM-6)
-Built 23 Nov 2026 in `20261123120000_chat_tables.sql`; checked on the full migration chain in an in-memory Postgres (23 checks). Not applied yet:
+Built and applied 23 Nov 2026 (`20261123120000_chat_tables.sql`); checked on the full migration chain in an in-memory Postgres (23 checks), then on the live database: guests get 401, and a thread on another user's brand is refused by the trigger:
 
 - [x] `chat_threads`: `id`, `brand_profile_id`, `user_id`, `insight_id` (text, nullable and without a foreign key: the card may already be purged, or live only in Arsip on the device), `card_snapshot` jsonb not null (a JSON object of at most 20,000 bytes), `created_at`, `last_message_at` (moved by every new message)
 - [x] `chat_messages`: `thread_id`, `role` (`user` | `elias`), `content` (1 to 4,000 characters), `created_at`
@@ -204,7 +216,7 @@ Built 23 Nov 2026 in `20261123120000_chat_tables.sql`; checked on the full migra
 - [x] Clients only read their threads and delete them; every write comes from the chat API route with the secret key, so no one can plant "Elias" replies in their own history. Guests (`anon`) get no access at all
 - [x] Account deletion cascades to threads and messages (through `auth.users` and the brand profile)
 - [x] Retention 30 days of inactivity, purged at 00:20 WIB by pg_cron `purge-old-chat-threads`; "Hapus percakapan" deletes a thread at once, its messages with it
-- [ ] Apply `20261123120000_chat_tables.sql`; nothing reads the tables yet, so it can go before or after any deploy
+- [x] Applied `20261123120000_chat_tables.sql`
 - Guests can't use Chat (decided 23 Nov 2026): it is only for signed-in users who finished onboarding, since every chat needs a brand profile and guests would spend the shared free quota. Enforced at every layer:
   - [ ] Page: `/chat` stays out of `publicPaths` in `src/proxy.ts`, so guests are sent to `/login` and signed-in users must finish onboarding first (already true; a comment there guards it)
   - [ ] API: `/api/` routes skip the proxy's sign-in check, so the chat route answers 401 without a session, like `/api/elias/insight`

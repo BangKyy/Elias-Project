@@ -106,6 +106,13 @@ function readCards(supabase: SupabaseClient, from: string, columns: string) {
 }
 
 /** Every stored card from the last 5 days. Readable by guests too, through RLS. */
+/** One stored card by id, while it is still in the 5-day window (RLS hides older ones); null otherwise. */
+export async function readCard(supabase: SupabaseClient, id: string): Promise<Insight | null> {
+  const { data, error } = await supabase.from('insights').select(cardColumns).eq('id', id).maybeSingle<InsightRow>();
+  if (error) console.error('Insight store: reading a card failed', error.message);
+  return data ? toInsight(data) : null;
+}
+
 export async function readWindow(supabase: SupabaseClient, today: string): Promise<StoredWindow> {
   const from = daysBefore(today, feedWindowDays - 1);
   const [cycles, tagged] = await Promise.all([

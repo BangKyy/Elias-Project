@@ -41,6 +41,11 @@ function models(): string[] {
   return modelsFrom(process.env.OPENROUTER_MODELS, DEFAULT_MODELS);
 }
 
+/** Chat asks for the same strict JSON as an analysis, so it falls back to the same models. */
+export function chatModels(): string[] {
+  return modelsFrom(process.env.OPENROUTER_CHAT_MODELS, models());
+}
+
 type ChatCompletion = {
   model?: string;
   choices?: { finish_reason?: string | null; message?: { content?: string | null } }[];
@@ -83,7 +88,7 @@ const upstreamError: InsightError = {
 type ChatRequest = {
   /** Overrides the default model list for this call */
   models?: string[];
-  messages: { role: 'system' | 'user'; content: string }[];
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
   schemaName: string;
   schema: object;
   maxTokens: number;
