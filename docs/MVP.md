@@ -169,6 +169,12 @@ Env: `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `A
 
 - [ ] Surface exists, follow-up on a card; full spec still open
 
+Not part of V1 (decided 23 Nov 2026): V1 launches without Chat, which stays in the header and the Terms page as "Segera". Chat is built after Phase 1 is done, because:
+
+- At 50 OpenRouter requests a day Chat is only a demo (see Chat message limits below)
+- Phase 1's core isn't working yet: the morning email (MVP 6) doesn't send and the scheduled cycle build is on hold (see Hosting)
+- Its groundwork is already in place, so waiting costs nothing: the brand layer and `can_access_brand` (MVP 4), and the history and limit decisions below
+
 ### Chat history (decided 23 Nov 2026)
 
 Saved for signed-in users, scoped to the brand, time-limited and deletable; never saved for guests.
