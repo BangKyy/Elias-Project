@@ -1,7 +1,6 @@
 'use client';
 
 import { useId, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { PencilSimpleLine } from '@phosphor-icons/react';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/supabase/errors';
@@ -30,7 +29,6 @@ export type SurveyAnswers = {
 };
 
 export default function SurveyForm({ initial }: { initial: SurveyAnswers | null }) {
-  const router = useRouter();
   const legendId = useId();
   const [source, setSource] = useState(referralSources.find((s) => s.value === initial?.referral_source)?.value ?? '');
   const [otherSource, setOtherSource] = useState(initial?.referral_source_other ?? '');
@@ -72,8 +70,9 @@ export default function SurveyForm({ initial }: { initial: SurveyAnswers | null 
       setStatus({ tone: 'error', text: errorMessage(error) });
       return;
     }
-    // Stays disabled while Beranda loads, behind the page-turn blob when it can play
-    if (!turnPageTo('/')) router.push('/');
+    // Stays disabled while Beranda loads, behind the page-turn blob when it can
+    // play. A full load: a `/` prefetched mid-onboarding redirects back to a step
+    if (!turnPageTo('/', { reload: true })) window.location.assign('/');
   }
 
   return (

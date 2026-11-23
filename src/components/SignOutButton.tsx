@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import { SignOut } from '@phosphor-icons/react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -19,15 +18,13 @@ export default function SignOutButton({
   className = 'group flex w-fit items-center gap-1.5 text-lg text-txt-black disabled:opacity-50 md:gap-2.5 md:text-xl',
   children,
 }: SignOutButtonProps) {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
 
   async function signOut() {
     setPending(true);
     await createClient().auth.signOut();
-    router.push(redirectTo);
-    // Drop any cached pages rendered for the signed-in user
-    router.refresh();
+    // A full load: the router would replay pages it prefetched for the signed-in user
+    window.location.assign(redirectTo);
   }
 
   return (

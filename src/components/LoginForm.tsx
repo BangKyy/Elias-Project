@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/supabase/errors';
 import { setRememberPreference } from '@/lib/supabase/remember';
@@ -18,7 +17,6 @@ import {
 import { turnPageTo } from './motion/pageCover';
 
 export default function LoginForm({ initialStatus }: { initialStatus: FormStatus }) {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -41,10 +39,10 @@ export default function LoginForm({ initialStatus }: { initialStatus: FormStatus
       return;
     }
     // The proxy sends users with unfinished onboarding to the step they stopped at.
-    // Refreshing drops cached pages rendered while signed out, which still show Daftar/Masuk
-    if (turnPageTo('/', { refresh: true })) return;
-    router.push('/');
-    router.refresh();
+    // A full load, not the router: it would replay the `/` it prefetched for a
+    // guest, a redirect to /signup (turnPageTo)
+    if (turnPageTo('/', { reload: true })) return;
+    window.location.assign('/');
   }
 
   return (

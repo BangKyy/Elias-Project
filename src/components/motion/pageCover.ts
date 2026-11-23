@@ -51,7 +51,7 @@ export function afterPageReveal(play: () => void, { overHold = false } = {}): ()
   return () => queue.delete(play);
 }
 
-type PageTurn = (href: string, options?: { refresh?: boolean }) => boolean;
+type PageTurn = (href: string, options?: { reload?: boolean }) => boolean;
 let turner: PageTurn | null = null;
 
 /** Registered by PageTransition, so code can navigate behind the blob like a link click. */
@@ -63,10 +63,14 @@ export function setPageTurner(turn: PageTurn): () => void {
 }
 
 /**
- * Navigates to `href` behind the page-turn blob; `refresh` also drops cached
- * pages once it is covered. False when no blob can play (reduced motion, or
- * not mounted), for the caller to navigate itself.
+ * Navigates to `href` behind the page-turn blob. False when no blob can play
+ * (reduced motion, or not mounted), for the caller to navigate itself.
+ *
+ * `reload` loads `href` from the server instead of the router: after signing
+ * in, out or finishing onboarding, the router would replay what it prefetched
+ * before (a guest's `/` is a redirect to /signup) and land on the wrong page.
+ * Only production builds prefetch, so development never shows it.
  */
-export function turnPageTo(href: string, options?: { refresh?: boolean }): boolean {
+export function turnPageTo(href: string, options?: { reload?: boolean }): boolean {
   return turner?.(href, options) ?? false;
 }

@@ -2,7 +2,6 @@
 
 import { useId, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { CircleNotch, Trash } from '@phosphor-icons/react';
 import { forgetAccountArchive } from '@/lib/archive';
 import { forgetCachedInsights } from '@/lib/elias/client';
@@ -170,7 +169,6 @@ const CONFIRM_WORD = 'HAPUS';
 
 /** Permanent delete: the auth user, the profile row with it, and this device's archive. */
 export function DeleteAccountSection({ account }: { account: AccountInfo }) {
-  const router = useRouter();
   const confirmId = useId();
   const [confirm, setConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -190,8 +188,8 @@ export function DeleteAccountSection({ account }: { account: AccountInfo }) {
         forgetCachedInsights();
         // The session's user no longer exists; this only clears the cookies
         await createClient().auth.signOut({ scope: 'local' }).catch(() => undefined);
-        router.push('/signup');
-        router.refresh();
+        // A full load: the router would replay pages prefetched for the deleted account
+        window.location.assign('/signup');
         return;
       }
       if (body?.message) message = body.message;

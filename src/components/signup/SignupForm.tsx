@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { Users } from '@phosphor-icons/react';
 import { createClient } from '@/lib/supabase/client';
 import { accountTypeOptions as accountTypes } from '@/lib/profileOptions';
@@ -24,7 +23,6 @@ import { onboardingFlow } from '../progress/flows';
 import PhaseProgress from '../progress/PhaseProgress';
 
 export default function SignupForm() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [accountType, setAccountType] = useState('');
@@ -57,7 +55,8 @@ export default function SignupForm() {
     if (error) {
       setStatus({ tone: 'error', text: errorMessage(error) });
     } else if (data.session) {
-      router.push('/onboarding/profile');
+      // A full load, so nothing prefetched as a guest is replayed
+      window.location.assign('/onboarding/profile');
     } else if (data.user?.identities?.length === 0) {
       // With email confirmation on, Supabase hides existing accounts behind an empty identities list
       setStatus({ tone: 'error', text: 'Email ini sudah terdaftar. Silakan masuk.' });

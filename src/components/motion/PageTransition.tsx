@@ -59,15 +59,17 @@ export default function PageTransition() {
   };
 
   // Covers the screen, then navigates underneath. False when the blob can't play
-  const turn = (href: string, { refresh = false } = {}) => {
+  const turn = (href: string, { reload = false } = {}) => {
     if (reducedMotion() || !blob.current) return false;
     if (phase.current !== 'idle') return true;
-    router.prefetch(href);
+    if (!reload) router.prefetch(href);
     cover(() => {
-      startTransition(() => {
-        router.push(href);
-        if (refresh) router.refresh();
-      });
+      // A full load under the blob; the next page's own entrance takes over
+      if (reload) {
+        window.location.assign(href);
+        return;
+      }
+      startTransition(() => router.push(href));
       stuck.current = setTimeout(lift, STUCK_MS);
     });
     return true;
