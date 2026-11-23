@@ -65,7 +65,9 @@ export const privacySections: LegalSection[] = [
         {chatEnabled && (
           <P>
             <strong>Chat.</strong> Pesan yang kamu tulis di Chat dan balasan Elias, beserta salinan kartu tren yang kamu tanyakan. Bila kartu
-            itu dibuka dari Arsip, salinannya ikut memuat catatan Arsip kamu untuk kartu tersebut.
+            itu dibuka dari Arsip, salinannya ikut memuat catatan Arsip kamu untuk kartu tersebut. Setiap balasan Elias disimpan
+            bersama nama model AI yang menulisnya. Bila kamu menilai balasan (membantu atau kurang membantu, dan alasannya bila ada),
+            penilaian itu disimpan bersama pesannya.
           </P>
         )}
         <P>
@@ -87,6 +89,12 @@ export const privacySections: LegalSection[] = [
         <li>Menyesuaikan Beranda: kategori brand menentukan kartu yang tampil lebih dulu, dan target market menentukan urutannya.</li>
         <li>Menyusun analisis Elias sesuai brand dan peran kamu.</li>
         {chatEnabled && <li>Menjawab pertanyaan lanjutan kamu tentang satu kartu tren di Chat, dan menyimpan percakapannya agar bisa kamu lanjutkan.</li>}
+        {chatEnabled && (
+          <li>
+            Memperbaiki Chat dari penilaian balasan: aturan yang diberikan ke model AI dan pilihan modelnya. Penilaian tidak dikirim ke
+            OpenRouter atau penyedia model AI.
+          </li>
+        )}
         <li>Menerapkan batas harian analisis{chatEnabled ? ' dan Chat' : ''} per akun, dan menjaga kuota model AI tetap cukup untuk kartu harian.</li>
         <li>Menyimpan jam email pagi dan pilihan Always On. Pengiriman email pagi belum aktif.</li>
         <li>Memahami dari mana pengguna mengetahui Elias, dari jawaban survei onboarding.</li>
@@ -194,7 +202,7 @@ export const privacySections: LegalSection[] = [
     content: (
       <P>
         Database Elias memakai aturan akses per baris (row level security), sehingga setiap akun hanya bisa membaca dan mengubah profil dan
-        data brand-nya sendiri.{chatEnabled ? ' Percakapan Chat hanya bisa dibaca dan dihapus oleh pemiliknya, dan tidak bisa diubah dari browser.' : ''}{' '}
+        data brand-nya sendiri.{chatEnabled ? ' Percakapan Chat hanya bisa dibaca dan dihapus oleh pemiliknya, dan dari browser yang bisa diubah hanya penilaian balasan Elias.' : ''}{' '}
         Catatan penggunaan model AI dan hasil analisis sementara tidak bisa diakses dari browser sama sekali. Mengganti kata sandi meminta kata
         sandi lama lebih dulu.
       </P>

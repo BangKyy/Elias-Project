@@ -32,6 +32,12 @@ export type CardSnapshot = {
 
 export type ChatTurn = { role: 'user' | 'elias'; content: string };
 
+/**
+ * Saved with every reply, so feedback can be compared before and after a
+ * change. Bump it whenever systemPrompt, replySchema or cleanReply changes.
+ */
+export const chatPromptVersion = '2026-11-23.2';
+
 /** The user's messages per conversation (docs/MVP.md, Chat message limits). */
 export const chatThreadLimit = Number(process.env.ELIAS_CHAT_THREAD_LIMIT) || 5;
 
@@ -125,7 +131,10 @@ ROLE
 The reader is a ${creativeRoleLabels[role]}. Their "so what" is ${creativeRoleFocus[role]}.
 
 FORMAT
-- "reply": plain text, at most about 120 words, short paragraphs or a numbered list. No markdown headings or bold.
+- "reply": plain text, at most about 120 words. The screen styles its shape, so keep to it:
+  1. The first line is the answer, one sentence on its own.
+  2. Then, only if needed, a blank line and short paragraphs or a numbered list ("1. ", "2. "). Each list item opens with a short label of one to three words and a colon, for example "1. Hook: ...".
+- No markdown: no headings, bold, italics or tables.
 
 <card>
 ${describeCard(card)}

@@ -3,6 +3,7 @@ import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { creativeRoleFor } from '@/lib/creativeRoles';
 import { brandContextFor, fetchProfile } from '@/lib/elias/brandProfile';
 import {
+  chatPromptVersion,
   chatThreadLimit,
   generateChatReply,
   snapshotFromBrowser,
@@ -25,7 +26,8 @@ const HISTORY_MESSAGES = 8;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type ChatResponse =
-  | { ok: true; threadId: string; reply: string; onTopic: boolean }
+  /** messageId is the saved reply, for rating it; null when the save failed */
+  | { ok: true; threadId: string; reply: string; onTopic: boolean; messageId: number | null }
   | { ok: false; error: ChatError };
 
 function fail(status: number, error: ChatError) {
@@ -158,12 +160,18 @@ export async function POST(request: Request) {
     }
     threadId = data.id;
   }
-  const { error: saveError } = await admin.from('chat_messages').insert([
-    { thread_id: threadId, role: 'user', content: body.message },
-    { thread_id: threadId, role: 'elias', content: generated.reply },
-  ]);
+  // The reply keeps its model and prompt version, so its rating can be traced back
+  const { data: saved, error: saveError } = await admin
+    .from('chat_messages')
+    .insert([
+      { thread_id: threadId, role: 'user', content: body.message },
+      { thread_id: threadId, role: 'elias', content: generated.reply, model: generated.model, prompt_version: chatPromptVersion },
+    ])
+    .select('id, role')
+    .returns<{ id: number; role: 'user' | 'elias' }[]>();
   // The reply still reaches the user; only the history misses this turn
   if (saveError) console.error('Chat: messages could not be saved', saveError);
+  const messageId = saved?.find((message) => message.role === 'elias')?.id ?? null;
 
-  return NextResponse.json<ChatResponse>({ ok: true, threadId, reply: generated.reply, onTopic: generated.onTopic });
+  return NextResponse.json<ChatResponse>({ ok: true, threadId, reply: generated.reply, onTopic: generated.onTopic, messageId });
 }

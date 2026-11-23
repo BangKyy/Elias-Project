@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, CircleNotch, PaperPlaneRight, TrashSimple } from '@phosphor-icons/react';
 import type { ChatResponse } from '@/app/api/chat/route';
 import { useArchive } from '@/lib/archive';
-import type { ChatTurn } from '@/lib/elias/chat';
+import type { ChatFeedbackReason, ChatMessage, ChatRating } from '@/lib/chatFeature';
 import type { Verdict } from '@/lib/insights/types';
 import { createClient } from '@/lib/supabase/client';
 import { FormMessage, type FormStatus } from '../auth/fields';
 import VerdictTab from '../beranda/VerdictTab';
+import ReplyActions from './ReplyActions';
+import ReplyText from './ReplyText';
 
 const MESSAGE_MAX = 1000;
 
@@ -45,7 +47,7 @@ type ChatViewProps = {
   threadId: string | null;
   insightId: string | null;
   card: ChatCard | null;
-  initialMessages: ChatTurn[];
+  initialMessages: ChatMessage[];
   /** The user's messages allowed per conversation (ELIAS_CHAT_THREAD_LIMIT) */
   threadLimit: number;
 };
@@ -85,7 +87,7 @@ export default function ChatView({ threadId, insightId, card, initialMessages, t
     const message = draft.trim();
     setSending(true);
     setStatus(null);
-    setMessages((current) => [...current, { role: 'user', content: message }]);
+    setMessages((current) => [...current, { id: null, role: 'user', content: message, rating: null, reason: null }]);
     setDraft('');
 
     let result: ChatResponse;
@@ -108,9 +110,24 @@ export default function ChatView({ threadId, insightId, card, initialMessages, t
       setStatus({ tone: 'error', text: result.error.message });
       return;
     }
-    setMessages((current) => [...current, { role: 'elias', content: result.reply }]);
+    setMessages((current) => [...current, { id: result.messageId, role: 'elias', content: result.reply, rating: null, reason: null }]);
     // The first message opened the thread: give the conversation its own address
     if (!threadId) router.replace(`/chat/${result.threadId}`);
+  }
+
+  // Shown at once; the old rating comes back if the save fails. RLS only lets
+  // the thread's owner rate, and only the rating columns (chat_feedback migration)
+  async function rate(id: number, rating: ChatRating | null, reason: ChatFeedbackReason | null) {
+    const before = messages.find((message) => message.id === id);
+    if (!before) return;
+    const apply = (next: Pick<ChatMessage, 'rating' | 'reason'>) =>
+      setMessages((current) => current.map((message) => (message.id === id ? { ...message, ...next } : message)));
+    apply({ rating, reason });
+    const { error } = await createClient().from('chat_messages').update({ rating, reason }).eq('id', id);
+    if (error) {
+      apply({ rating: before.rating, reason: before.reason });
+      setStatus({ tone: 'error', text: 'Penilaian gagal disimpan. Coba lagi.' });
+    }
   }
 
   async function deleteThread() {
@@ -180,10 +197,22 @@ export default function ChatView({ threadId, insightId, card, initialMessages, t
                 : 'flex max-w-[85%] flex-col gap-1.5 self-start rounded-2xl rounded-bl-sm bg-txt-black px-4 py-3 text-paper'
             }
           >
-            {message.role === 'elias' && <span className="font-mono text-xs font-bold text-primary uppercase">Elias</span>}
-            <span className={message.role === 'elias' ? 'text-md break-words whitespace-pre-line text-txt-white' : undefined}>
-              {message.content}
-            </span>
+            {message.role === 'elias' ? (
+              <>
+                <span className="font-mono text-xs font-bold text-primary uppercase">Elias</span>
+                <ReplyText text={message.content} />
+              </>
+            ) : (
+              message.content
+            )}
+            {message.role === 'elias' && (
+              <ReplyActions
+                content={message.content}
+                rating={message.rating}
+                reason={message.reason}
+                onRate={message.id === null ? undefined : (rating, reason) => rate(message.id!, rating, reason)}
+              />
+            )}
           </li>
         ))}
         {sending && (

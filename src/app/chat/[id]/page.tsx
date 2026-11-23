@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation';
 import AppShell from '@/components/app/AppShell';
 import BerandaBackdrop from '@/components/beranda/BerandaBackdrop';
 import ChatView from '@/components/chat/ChatView';
-import { chatEnabled } from '@/lib/chatFeature';
-import { chatThreadLimit, type CardSnapshot, type ChatTurn } from '@/lib/elias/chat';
+import { chatEnabled, type ChatMessage } from '@/lib/chatFeature';
+import { chatThreadLimit, type CardSnapshot } from '@/lib/elias/chat';
 import { headerAccount } from '@/lib/headerAccount';
 import { createClient } from '@/lib/supabase/server';
 
@@ -26,7 +26,7 @@ export default async function ChatThreadPage({ params }: { params: Promise<{ id:
   } = await supabase.auth.getUser();
   const [{ data: thread }, { data: messages }] = await Promise.all([
     supabase.from('chat_threads').select('id, card_snapshot').eq('id', id).maybeSingle<{ id: string; card_snapshot: CardSnapshot }>(),
-    supabase.from('chat_messages').select('role, content').eq('thread_id', id).order('id').returns<ChatTurn[]>(),
+    supabase.from('chat_messages').select('id, role, content, rating, reason').eq('thread_id', id).order('id').returns<ChatMessage[]>(),
   ]);
   if (!thread) notFound();
 

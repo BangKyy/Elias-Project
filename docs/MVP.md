@@ -206,6 +206,7 @@ Also to handle while building it:
 - [x] `/chat/baru?kartu=<id>`: a new conversation from "Tanya Elias". A Beranda card is read on the server; an older card comes from this device's Arsip and is sent with the first message; neither gives "Kartu ini tidak ditemukan" with links back. Nothing is saved until Elias's first reply, then the page moves to `/chat/<id>`
 - [x] `/chat/<id>`: the conversation (`src/components/chat/ChatView.tsx`): the card on top, a note that messages are kept 30 days and processed through OpenRouter (so no confidential information), three starter questions on an empty conversation, "Sisa N pesan di percakapan ini", Ctrl+Enter to send, a failed send puts the message back in the box, and "Hapus percakapan" with a confirm step. Another user's id is a 404
 - [x] "Tanya Elias" (`src/components/chat/AskEliasLink.tsx`) on Beranda cards for signed-in users, and on Arsip entries for account holders
+- [x] Reply hierarchy (`src/components/chat/ReplyText.tsx`): the model still writes plain text, and the bubble reads its shape. The answer (first sentence) is larger and semibold, numbered and bullet lists get red mono markers, and a short "Label:" opening a line or list item is bold. The prompt asks for that shape: the answer alone on the first line, then paragraphs or a numbered list of "Label: ..." items (`chatPromptVersion` 2026-11-23.2). Older replies still render, at worst as plain paragraphs
 - [x] Behind a switch until step 5 (`src/lib/chatFeature.ts`): open in development, and in production only with `NEXT_PUBLIC_CHAT_ENABLED=1`. Until then production shows the header item as "Segera", hides "Tanya Elias", and `/chat` pages are 404. `/api/chat` itself is live (guests get 401) but nothing calls it
 - [x] Step 5a, Privacy and Terms (23 Nov 2026). The Chat passages follow `chatEnabled`, so the pages never describe Chat before it opens:
   - Privacy: chat messages and the card copy (with its Arsip note) are collected, why, that OpenRouter receives the card, recent messages and the new one, that some free model providers may log or train on prompts (so no confidential, customer or other people's data), 30-day retention and Hapus percakapan, removed with the account, readable only by their owner
@@ -215,6 +216,24 @@ Also to handle while building it:
 - [x] Step 5b: `NEXT_PUBLIC_CHAT_ENABLED=1` set in Vercel (Production) on 23 Nov 2026 and deployed; Chat is open in production. `LEGAL_EFFECTIVE_DATE` stays 23 November 2026
 - [ ] Chat errors kept somewhere that outlives Vercel Hobby's 1-hour logs
 - [ ] Preview deployments have no env vars, so chat is tested locally or on production against the one database
+
+### Chat feedback (built 23 Nov 2026)
+
+A thumbs up or down on each Elias reply. It trains nothing: the free models belong to their providers and never see it. It shows which replies miss, so the prompt (`systemPrompt` in `src/lib/elias/chat.ts`) and the model list (`OPENROUTER_CHAT_MODELS`) can be tuned, and bad replies become test cases.
+
+- [x] Migration `20261123130000_chat_feedback.sql`, columns on `chat_messages`:
+  - `model`: the OpenRouter model that wrote the reply
+  - `prompt_version`: `chatPromptVersion` in `chat.ts`; bump it whenever the prompt, the schema or `cleanReply` changes
+  - `rating`: 1 or -1
+  - `reason`, only on a thumbs down: `generic`, `off_brand`, `wrong_facts` or `unanswered`
+  - `rated_at`, set by a trigger
+- [x] RLS: the thread's owner may update only `rating` and `reason`, only on Elias replies in their own thread (DM-6); user messages can never carry a rating. Tested in PGlite (18 checks), with the chat-table checks still passing
+- [x] The chat route saves the model and prompt version with each reply and returns the reply's id
+- [x] Screen (`src/components/chat/ReplyActions.tsx`): a copy button under every reply ("Tersalin" for 2 seconds, "Gagal menyalin" without clipboard access), then thumbs under each saved reply; tapping the chosen one again clears it; a thumbs down offers "Terlalu umum", "Tidak sesuai brand", "Salah fakta", "Tidak menjawab" (optional). Saved straight away, put back if the save fails
+- [x] Privacy: replies are stored with their model, ratings with their message, used to improve Chat, never sent to OpenRouter; the browser may change only ratings
+- [ ] Ratings go with their thread after 30 days. Keeping them longer needs a copy without the user or the card's Arsip note, and a Privacy update; decide once there are enough ratings to read
+- [ ] A way to read them: for now a SQL query in the Supabase editor (`select model, prompt_version, rating, reason, content from chat_messages where rating is not null`)
+- [ ] Highly rated replies as examples in the prompt only within the same brand, or rewritten without brand details (DM-6)
 
 ### Chat history (decided 23 Nov 2026)
 
