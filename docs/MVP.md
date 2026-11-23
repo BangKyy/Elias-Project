@@ -196,11 +196,15 @@ Saved for signed-in users, scoped to the brand, time-limited and deletable. Gues
 
 - Prerequisite: the minimal MVP 4 split (`brand_profile`) first, so history is keyed to `brand_profile_id` from day one (DM-4) instead of `profiles` — built 23 Nov 2026, see MVP 4
 - Chat tables use `public.can_access_brand(brand_profile_id)` in their RLS policies, so no thread or message of one brand is ever served for another (DM-6)
-- [ ] `chat_threads`: `id`, `brand_profile_id`, `user_id`, `insight_id` (nullable: the card may already be purged), `card_snapshot` jsonb not null (a copy of the card, since cards are purged after 5 days and Arsip lives on the device; every thread is a follow-up on one card), `created_at`
-- [ ] `chat_messages`: `thread_id`, `role` (`user` | `elias`), `content`, `created_at`
-- [ ] RLS through `can_access_brand`: only the brand's owner reads or writes its rows; zero cross-brand hits (DM-6)
-- [ ] Account deletion cascades to threads and messages (`DELETE /api/account`)
-- [ ] Retention 30 days of inactivity, purged by pg_cron like `purge-old-insights`; "Hapus percakapan" deletes a thread at once
+Built 23 Nov 2026 in `20261123120000_chat_tables.sql`; checked on the full migration chain in an in-memory Postgres (23 checks). Not applied yet:
+
+- [x] `chat_threads`: `id`, `brand_profile_id`, `user_id`, `insight_id` (text, nullable and without a foreign key: the card may already be purged, or live only in Arsip on the device), `card_snapshot` jsonb not null (a JSON object of at most 20,000 bytes), `created_at`, `last_message_at` (moved by every new message)
+- [x] `chat_messages`: `thread_id`, `role` (`user` | `elias`), `content` (1 to 4,000 characters), `created_at`
+- [x] RLS through `can_access_brand`, and only the thread's own user: zero cross-brand hits (DM-6). A trigger also refuses a thread whose user doesn't own its brand, even when the server writes with the secret key
+- [x] Clients only read their threads and delete them; every write comes from the chat API route with the secret key, so no one can plant "Elias" replies in their own history. Guests (`anon`) get no access at all
+- [x] Account deletion cascades to threads and messages (through `auth.users` and the brand profile)
+- [x] Retention 30 days of inactivity, purged at 00:20 WIB by pg_cron `purge-old-chat-threads`; "Hapus percakapan" deletes a thread at once, its messages with it
+- [ ] Apply `20261123120000_chat_tables.sql`; nothing reads the tables yet, so it can go before or after any deploy
 - Guests can't use Chat (decided 23 Nov 2026): it is only for signed-in users who finished onboarding, since every chat needs a brand profile and guests would spend the shared free quota. Enforced at every layer:
   - [ ] Page: `/chat` stays out of `publicPaths` in `src/proxy.ts`, so guests are sent to `/login` and signed-in users must finish onboarding first (already true; a comment there guards it)
   - [ ] API: `/api/` routes skip the proxy's sign-in check, so the chat route answers 401 without a session, like `/api/elias/insight`
