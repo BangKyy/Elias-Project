@@ -156,7 +156,8 @@ Checklist before `SOURCE_OFF_ENABLED=true`:
 - [x] Attribution in the card's sources and on Syarat; OFF is in no source picker or coverage claim
 - [x] A failed refresh never stops the cycle: the cycle only reads the stored snapshot, and a failed read means no line
 - [x] `20261124090000_open_food_facts.sql` applied 24 Nov 2026 (in the migration history as `open_food_facts`); checked: anon and authenticated have no access to `off_derived` or the three functions, the service role has; `insight_off_context` has one select policy, for authenticated. The advisor's only new notes are the intended "RLS enabled, no policy" on the two `off_derived` tables
-- [ ] Repository secret and variables set, one manual workflow run with `dry_run` off
+- [x] Secret and variables set on the fork `BangKyy/Elias-Project`, which runs the refresh (24 Nov 2026): the org repo `sumurcreative-intern/Elias-Project` needs an admin to set them, and has no `SOURCE_OFF_ENABLED`, so its copy of the workflow never runs on schedule. First run with `dry_run` off on 24 Nov 2026 (run 45341405799, 1 min 22 s; the dump streamed in 63 s): tests passed, 9,388 Indonesian products, 13 tag rows and 3 pairs stored, the same as the local dry run
+- [ ] `SOURCE_OFF_ENABLED=true` both in Vercel (the cycle and Syarat read it) and as the fork's Actions variable (the monthly schedule), once the legal items above are answered
 
 ## MVP 5a — Live role-tailored analysis (OpenRouter free tier)
 
