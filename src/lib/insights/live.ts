@@ -6,6 +6,7 @@ import { modelsFrom, requestCompletion } from '../elias/openrouter';
 import { cleanCopy, extractJson, isRecord, nonEmpty, parseVerdict } from '../elias/parse';
 import { fetchIndonesiaHeadlines, type NewsContext } from '../gdelt';
 import { pubmedContextFor } from '../sources/evidence/context';
+import { footballContextFor } from '../sources/footballdata/context';
 import { offContextFor } from '../sources/off/context';
 import { audienceMarkets, isAudienceMarket, targetMarketLabel } from '../targetMarkets';
 import { doNotTranslate } from '../glossary';
@@ -430,6 +431,7 @@ Match the verdict in brackets without naming it or quoting these rules:
 Where a topic is sensitive (politics, crime, disasters, religion, public anger, price hikes), warn against making light of it; otherwise say nothing about sensitivity.
 Some food and beverage trends end with an <off> line: a count from Open Food Facts, an open product database that contributors fill in. You may use it to sharpen the instruction (a label gap the brand can fill, a Nutri-Score angle), only with its numbers as written and always as "di Open Food Facts". It is never the market, a market share or what Indonesians buy.
 Some health and wellness trends end with a <pubmed> line: how many studies PubMed lists on the topic. A study count is never proof: never write that something works, is proven, effective, safe, cures or prevents anything, and never turn the count into a product claim. Use it only to steer the brand: few trials means claims need care, many means the brand can point readers to the research, always citing "PubMed" and its numbers as written.
+Some football trends end with a <football> line: the competition's next match time (WIB) and the top of its table, from football-data.org. Use it to time content around when attention peaks, with its dates and numbers as written. Never mention odds, betting or score predictions, and never say who will win.
 
 ${voiceRules}
 
@@ -441,7 +443,7 @@ function recommendationsMessage(drafts: Draft[]): string {
 ${drafts
   .map(
     (draft, i) =>
-      `${i + 1}. [${draft.verdict}] ${draft.signal} ${draft.whyItMatters}${draft.offContext ? ` <off>${draft.offContext.line}</off>` : ''}${draft.pubmedContext ? ` <pubmed>${draft.pubmedContext.line}</pubmed>` : ''}`,
+      `${i + 1}. [${draft.verdict}] ${draft.signal} ${draft.whyItMatters}${draft.offContext ? ` <off>${draft.offContext.line}</off>` : ''}${draft.pubmedContext ? ` <pubmed>${draft.pubmedContext.line}</pubmed>` : ''}${draft.footballContext ? ` <football>${draft.footballContext.line}</football>` : ''}`,
   )
   .join('\n')}
 </trends>
@@ -707,11 +709,12 @@ async function generate(date: string): Promise<Generated> {
   // & Beverage or Health & Wellness cards already picked, here, so the role
   // calls can use it and it is stored with the card (BR-6, AR-9). Each is off
   // until its SOURCE_*_ENABLED
-  const [off, pubmed] = await Promise.all([offContextFor(parsed), pubmedContextFor(parsed)]);
+  const [off, pubmed, football] = await Promise.all([offContextFor(parsed), pubmedContextFor(parsed), footballContextFor(parsed)]);
   const drafts = parsed.map((draft, i) => {
     const offContext = off.get(i);
     const pubmedContext = pubmed.get(i);
-    return { ...draft, ...(offContext && { offContext }), ...(pubmedContext && { pubmedContext }) };
+    const footballContext = football.get(i);
+    return { ...draft, ...(offContext && { offContext }), ...(pubmedContext && { pubmedContext }), ...(footballContext && { footballContext }) };
   });
   const perRole = drafts.length ? await Promise.all(roles.map((role) => recommendationsFor(role, drafts))) : [];
   step('roles answered');

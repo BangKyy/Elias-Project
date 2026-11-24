@@ -191,6 +191,37 @@ Checklist before `SOURCE_PUBMED_ENABLED=true`:
 - [x] Migration present in the database (checked 24 Nov 2026): `evidence_cache.pubmed_counts`, `insight_evidence_context` (select for authenticated only), both functions (service role only), all matching `20261124100000_pubmed_evidence.sql`. Applied outside the migration history (not listed there), like the 23 Nov migrations
 - [x] Vercel Production env set 24 Nov 2026: `SOURCE_PUBMED_ENABLED=false`, `NCBI_TOOL`, `NCBI_EMAIL`, `PUBMED_RPS`, `PUBMED_WINDOW_YEARS`, `PUBMED_CACHE_TTL_DAYS`, `PUBMED_MIN_TOTAL`, and `NCBI_API_KEY` (Sensitive, piped from `.env.local` with the Vercel CLI). Switching on is now `SOURCE_PUBMED_ENABLED=true` and a redeploy
 
+### football-data.org (built 24 Nov 2026, off until the checklist passes)
+
+Schedule and standings context for Sports cards, per the football-data.org setup guide (24 Nov 2026). Never a card trigger, never a live score, never odds, betting or predictions. Covers the 12 free-plan competitions only (none Indonesian), so a trend about Liga 1 or the national team gets no line.
+
+- Competitions confirmed with `GET /v4/competitions` (no token) on 24 Nov 2026, all `TIER_ONE`: PL 2021, ELC 2016, CL 2001, BL1 2002, SA 2019, PD 2014, FL1 2015, DED 2003, PPL 2017, BSA 2013, WC 2000, EC 2018. CL, WC and EC are `CUP` (standings answer 404, so fixture lines only); the World Cup ended July 2026 and the Euros' current season is 2024, so those two have no line until their next tournament
+- Response fields from docs.football-data.org (v4): matches `utcDate`, `status` (11 values incl. EXTRA_TIME and PENALTY_SHOOTOUT), `matchday`, `homeTeam.name`, `awayTeam.name`, `score.fullTime`; standings `standings[]` (`type` TOTAL/HOME/AWAY) with `table[]` `position`, `team.name`, `playedGames`, `points`; errors `{ "error": … }`, rate headers `X-RequestsAvailable` / `X-RequestCounter-Reset`. Not yet checked against a live answer with a token
+- Refresh (`scripts/football-refresh.mjs`, `.github/workflows/football-refresh.yml` on the fork, 03:00 WIB daily): per competition, standings and the matches of the last 3 and next 7 days, at 6 requests a minute (about 4 minutes); one competition failing never stops the rest. Keeps team names, dates and numbers only: no crests, players, goals or odds. While the flag isn't `true` a run empties the snapshot instead (`football_purge_all`, terms §4.6, §9.1); `npm run football:refresh -- --purge` does it by hand. Only the job holds the token: the app never calls the provider
+- Storage (`20261124110000_football_data.sql`): schema `sports_cache` (`competitions`, `fixtures`, `standings`), server only, replaced per competition with no history. The line goes to `insight_evidence_context` (source `footballdata`, the source check widened)
+- The cycle (`src/lib/sources/footballdata/context.ts`) matches each Sports trend to a competition (`topicMap.ts`, whole words; no bare "euro" or "championship"), composes the line in code from the snapshot, times in WIB ("Liga Inggris memasuki pekan 13. Pertandingan berikutnya Minggu, 29 Nov, 22.00 WIB, dengan 2 laga dalam 7 hari ke depan. Klasemen Liga Inggris per 24 Nov: Arsenal FC memimpin dengan 28 poin dari 12 laga."), leaves out postponed or cancelled matches, and gives none when the snapshot is older than `FOOTBALLDATA_MAX_AGE_HOURS` (36). Passed to the role calls with a no-odds, no-prediction rule (BR-6), stored with the card (AR-9)
+- Card: the line under "Mengapa penting" and "Football data provided by the Football-Data.org API" (linked, terms §7.1) under the sources, signed-in only; guests' cards drop it. Syarat and Privasi name it only while enabled
+- Env: app `SOURCE_FOOTBALLDATA_ENABLED`, `FOOTBALLDATA_MAX_AGE_HOURS`, `FOOTBALLDATA_FIXTURE_WINDOW_DAYS`; job `FOOTBALLDATA_API_TOKEN` (secret), `FOOTBALLDATA_COMPETITIONS`, `FOOTBALLDATA_RPM_CAP`, `FOOTBALLDATA_RESULT_WINDOW_DAYS`, `FOOTBALLDATA_BASE_URL`
+
+Checklist before `SOURCE_FOOTBALLDATA_ENABLED=true`:
+- [ ] The provider answers in writing: may the free plan be used in a commercial product; may daily snapshots and derived insights be stored and for how long; does the attribution meet §7.1 (contacts: daniel@football-data.org, info@football-data.org). Also asked by the guide: third-party rights in league fixture lists (English, Scottish), and limits on particular competitions
+- [ ] Legal: is a provider's informal "go ahead" enough without a contract; do derived insights carry obligations beyond §7.1 and §9.1
+- [ ] Token registered (free plan) and stored as a secret: `.env.local` and the fork's `FOOTBALLDATA_API_TOKEN`, never in Vercel
+- [x] The 12 codes and IDs confirmed with `GET /v4/competitions`
+- [ ] Parser checked against a live v4 answer with the token (a manual workflow run with `dry_run` on); [x] tested against the documented shapes, incl. standings 404 for cups (`npm run test:football`)
+- [x] Topic map to competitions, whole words, checked against false matches (currency, Liga 1)
+- [x] Test: no crests, photos or player data kept
+- [x] Test: requests carry only competition codes, dates and the token (in a header, never the URL)
+- [x] Test: a snapshot older than 36 hours gives no line
+- [x] Opening a card calls neither the provider nor a model: the line is read from `insight_evidence_context`
+- [x] Test: 429, 5xx or a timeout fails one competition, never the refresh or the cycle
+- [x] Test: a full refresh keeps to the request rate
+- [x] Purge: `football_purge_all()` empties all three tables (cascade); runs whenever the job finds the flag off
+- [x] Attribution in the card's sources and on Syarat; not in any source picker or the guest feed
+- [x] Test: no line mentions odds, betting or predictions
+- [x] `20261124110000_football_data.sql` applied 24 Nov 2026 (in the migration history as `football_data`); checked: anon and authenticated have no access to `sports_cache` or the three functions, the service role has; the source check allows `footballdata`; a test competition stored, read back and purged (all three tables empty after)
+- [ ] Fork secret `FOOTBALLDATA_API_TOKEN` and variable `SOURCE_FOOTBALLDATA_ENABLED` set; `SOURCE_FOOTBALLDATA_ENABLED` in Vercel
+
 ## MVP 5a — Live role-tailored analysis (OpenRouter free tier)
 
 - [x] `POST /api/elias/insight` with `{ brandContext, trendTopic, userRole }`; signed-in only, brand id must be the caller's

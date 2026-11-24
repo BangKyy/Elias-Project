@@ -1,0 +1,54 @@
+# football-data.org daily snapshot (docs/MVP.md, football-data.org).
+# Stores fixtures and standings of the 12 free-plan competitions in
+# sports_cache before the day's cards; about 4 minutes at 6 requests a
+# minute, too long for a Vercel function. While SOURCE_FOOTBALLDATA_ENABLED
+# isn't "true", a run empties the snapshot instead (terms §4.6, §9.1).
+#
+# Repository settings it needs:
+#   secrets.FOOTBALLDATA_API_TOKEN       the football-data.org token
+#   secrets.SUPABASE_SECRET_KEY          the project's secret key
+#   vars.NEXT_PUBLIC_SUPABASE_URL        the project URL
+#   vars.SOURCE_FOOTBALLDATA_ENABLED     "true" to refresh; anything else purges
+# A repository without vars.NEXT_PUBLIC_SUPABASE_URL (the org repo) skips the schedule.
+
+name: football-data.org refresh
+
+on:
+  schedule:
+    # 03:00 WIB daily, before the first visit generates the day's cards
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Fetch and print instead of storing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: football-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.event_name == 'workflow_dispatch' || vars.NEXT_PUBLIC_SUPABASE_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Test the refresh and the card line
+        run: npm run test:football
+      - name: Refresh the snapshot
+        run: node scripts/football-refresh.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
+        env:
+          FOOTBALLDATA_API_TOKEN: ${{ secrets.FOOTBALLDATA_API_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SOURCE_FOOTBALLDATA_ENABLED: ${{ vars.SOURCE_FOOTBALLDATA_ENABLED }}

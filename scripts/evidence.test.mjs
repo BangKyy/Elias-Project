@@ -73,7 +73,8 @@ test('calls keep to the configured rate', async () => {
   // Two terms in a burst, 8 requests at 20 a second
   await Promise.all([fetchPubmedCounts('a[tiab]', 5, { ...options, rps: 20, fetch }), fetchPubmedCounts('b[tiab]', 5, { ...options, rps: 20, fetch })]);
   const sorted = times.sort((a, b) => a - b);
-  for (let i = 1; i < sorted.length; i++) assert.ok(sorted[i] - sorted[i - 1] >= 45, `gap ${sorted[i] - sorted[i - 1]} ms`);
+  // The k-th request never comes before its slot, k × 50 ms after the first (a late timer can shorten one gap, never the total)
+  for (let i = 1; i < sorted.length; i++) assert.ok(sorted[i] - sorted[0] >= i * 50 - 5, `request ${i} after ${sorted[i] - sorted[0]} ms`);
 });
 
 test('the line reports counts, never efficacy, and drops what it cannot back', () => {

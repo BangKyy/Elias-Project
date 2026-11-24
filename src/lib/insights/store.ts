@@ -113,22 +113,29 @@ async function readOffContext(supabase: SupabaseClient, ids: string[]): Promise<
   return new Map((data ?? []).map((row) => [row.insight_id, { line: row.line, sample: row.sample, refreshedAt: row.refreshed_at }]));
 }
 
-// PubMed lines likewise, until 20261124100000_pubmed_evidence.sql is applied
+// PubMed and football-data.org lines likewise, one row per card and source,
+// until 20261124100000_pubmed_evidence.sql is applied (football-data.org also
+// needs 20261124110000_football_data.sql to widen the source check)
 const EVIDENCE_MIGRATION = '20261124100000_pubmed_evidence.sql';
+const FOOTBALL_MIGRATION = '20261124110000_football_data.sql';
 
 type EvidenceRow = { insight_id: string; source: string; line: string; fetched_at: string };
+type EvidenceLine = { line: string; fetchedAt: string };
 
-/** The PubMed lines of these cards; RLS answers guests with none. */
-async function readPubmedContext(supabase: SupabaseClient, ids: string[]): Promise<Map<string, NonNullable<Insight['pubmedContext']>>> {
-  if (!ids.length) return new Map();
+/** The PubMed and football-data.org lines of these cards, by source; RLS answers guests with none. */
+async function readEvidenceContext(supabase: SupabaseClient, ids: string[]): Promise<Record<'pubmed' | 'footballdata', Map<string, EvidenceLine>>> {
+  const lines = { pubmed: new Map<string, EvidenceLine>(), footballdata: new Map<string, EvidenceLine>() };
+  if (!ids.length) return lines;
   const { data, error } = await supabase
     .from('insight_evidence_context')
     .select('insight_id, source, line, fetched_at')
-    .eq('source', 'pubmed')
     .in('insight_id', ids)
     .returns<EvidenceRow[]>();
-  if (error && !missingTable(error)) console.error('Insight store: reading PubMed lines failed', error.message);
-  return new Map((data ?? []).map((row) => [row.insight_id, { line: row.line, fetchedAt: row.fetched_at }]));
+  if (error && !missingTable(error)) console.error('Insight store: reading evidence lines failed', error.message);
+  for (const row of data ?? []) {
+    if (row.source === 'pubmed' || row.source === 'footballdata') lines[row.source].set(row.insight_id, { line: row.line, fetchedAt: row.fetched_at });
+  }
+  return lines;
 }
 
 function readCards(supabase: SupabaseClient, from: string, columns: string) {
@@ -162,7 +169,7 @@ export async function readWindow(supabase: SupabaseClient, today: string): Promi
   }
   if (cycles.error || cards.error) console.error('Insight store: read failed', cycles.error ?? cards.error);
   const ids = (cards.data ?? []).map((row) => row.id);
-  const [off, pubmed] = await Promise.all([readOffContext(supabase, ids), readPubmedContext(supabase, ids)]);
+  const [off, evidence] = await Promise.all([readOffContext(supabase, ids), readEvidenceContext(supabase, ids)]);
 
   return {
     cycleDates: new Set((cycles.data ?? []).map((row) => row.cycle_date as string)),
@@ -170,8 +177,14 @@ export async function readWindow(supabase: SupabaseClient, today: string): Promi
       const insight = toInsight(row);
       if (!insight) return [];
       const offContext = off.get(row.id);
-      const pubmedContext = pubmed.get(row.id);
-      return [{ cycleDate: row.cycle_date, insight: { ...insight, ...(offContext && { offContext }), ...(pubmedContext && { pubmedContext }) } }];
+      const pubmedContext = evidence.pubmed.get(row.id);
+      const footballContext = evidence.footballdata.get(row.id);
+      return [
+        {
+          cycleDate: row.cycle_date,
+          insight: { ...insight, ...(offContext && { offContext }), ...(pubmedContext && { pubmedContext }), ...(footballContext && { footballContext }) },
+        },
+      ];
     }),
   };
 }
@@ -262,14 +275,20 @@ export async function saveCycle(date: string, insights: Insight[]): Promise<void
     else if (offError) console.error('Insight store: saving Open Food Facts lines failed', offError.message);
   }
 
-  const pubmedRows = insights.flatMap((insight) =>
-    insight.pubmedContext
-      ? [{ insight_id: insight.id, source: 'pubmed', line: insight.pubmedContext.line, fetched_at: insight.pubmedContext.fetchedAt }]
-      : [],
-  );
-  if (pubmedRows.length) {
-    const { error: pubmedError } = await admin.from('insight_evidence_context').insert(pubmedRows);
-    if (missingTable(pubmedError)) console.warn(`Insight store: saving cards without their PubMed lines; apply ${EVIDENCE_MIGRATION}`);
-    else if (pubmedError) console.error('Insight store: saving PubMed lines failed', pubmedError.message);
+  // PubMed and football-data.org go in separately, so a database without the
+  // football migration (source check) still keeps the PubMed lines
+  const evidence = [
+    { source: 'pubmed', key: 'pubmedContext', label: 'PubMed', migration: EVIDENCE_MIGRATION },
+    { source: 'footballdata', key: 'footballContext', label: 'football-data.org', migration: FOOTBALL_MIGRATION },
+  ] as const;
+  for (const { source, key, label, migration } of evidence) {
+    const rows = insights.flatMap((insight) => {
+      const context = insight[key];
+      return context ? [{ insight_id: insight.id, source, line: context.line, fetched_at: context.fetchedAt }] : [];
+    });
+    if (!rows.length) continue;
+    const { error } = await admin.from('insight_evidence_context').insert(rows);
+    if (missingTable(error) || checkViolation(error)) console.warn(`Insight store: saving cards without their ${label} lines; apply ${migration}`);
+    else if (error) console.error(`Insight store: saving ${label} lines failed`, error.message);
   }
 }

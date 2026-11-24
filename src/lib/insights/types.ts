@@ -94,6 +94,12 @@ export type Insight = {
    * Signed-in users only (BR-4)
    */
   pubmedContext?: { line: string; fetchedAt: string };
+  /**
+   * One football-data.org sentence on some Sports cards: the schedule and
+   * the table, never a prediction (../sources/footballdata/context).
+   * Signed-in users only (BR-4)
+   */
+  footballContext?: { line: string; fetchedAt: string };
 };
 
 /** One bounded batch of cards; the feed only changes when a new cycle runs (BR-1). */

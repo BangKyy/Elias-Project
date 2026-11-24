@@ -1,4 +1,4 @@
-import { Barcode, BookOpenText, Clock, LockSimple } from '@phosphor-icons/react/dist/ssr';
+import { Barcode, BookOpenText, Clock, LockSimple, SoccerBall } from '@phosphor-icons/react/dist/ssr';
 import { archetypeDirections } from '@/lib/archetypes';
 import { creativeRoleLabels, type CreativeRole } from '@/lib/creativeRoles';
 import { formatDate } from '@/lib/dates';
@@ -100,6 +100,12 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
                 {insight.pubmedContext.line}
               </p>
             )}
+            {flavour && insight.footballContext && (
+              <p className="flex items-start gap-1.5 text-sm text-neutral-700">
+                <SoccerBall size={16} aria-hidden className="mt-0.5 shrink-0 text-gray-600" />
+                {insight.footballContext.line}
+              </p>
+            )}
           </section>
 
           {insight.evidence && insight.evidence.length > 0 && (
@@ -139,6 +145,14 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
                     MEDLINE®/PubMed®
                   </a>
                   , basis data National Library of Medicine AS.
+                </p>
+              )}
+              {/* The provider's required attribution (terms §7.1), only where a football line is shown (BR-5) */}
+              {flavour && insight.footballContext && (
+                <p className="mt-2.5 text-xs text-gray-600">
+                  <a href="https://www.football-data.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                    Football data provided by the Football-Data.org API
+                  </a>
                 </p>
               )}
             </EvidenceSection>

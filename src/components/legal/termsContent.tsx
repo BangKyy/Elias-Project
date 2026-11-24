@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { chatEnabled } from '@/lib/chatFeature';
 import { LEGAL_OPERATOR } from '@/lib/legal';
 import { pubmedEnabled } from '@/lib/sources/evidence/enabled';
+import { footballEnabled } from '@/lib/sources/footballdata/enabled';
 import { offEnabled } from '@/lib/sources/off/enabled';
 import { ContactLink, List, P, type LegalSection } from './LegalPage';
 
@@ -172,6 +173,16 @@ export const termsSections: LegalSection[] = [
             </a>
             , basis data National Library of Medicine AS (From MEDLINE®/PubMed®, a database of the U.S. National Library of Medicine). National
             Library of Medicine tidak mendukung Elias atau isinya.
+          </P>
+        )}
+        {footballEnabled() && (
+          <P>
+            Sebagian tren sepak bola memuat jadwal dan klasemen kompetisi Eropa, Brasil, dan internasional yang dicakup football-data.org, bukan liga
+            Indonesia. Jadwal dicatat sekali sehari dan bisa berubah, dan Elias tidak memuat odds, taruhan, atau prediksi skor.{' '}
+            <a href="https://www.football-data.org" target="_blank" rel="noopener noreferrer" className="underline">
+              Football data provided by the Football-Data.org API
+            </a>
+            .
           </P>
         )}
       </>
