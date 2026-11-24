@@ -83,6 +83,11 @@ export type Insight = {
   recommendations: Record<CreativeRole, string>;
   /** What the card is based on, shown as links so the reader can check it */
   evidence?: Evidence[];
+  /**
+   * One Open Food Facts sentence on some Food & Beverage cards, written with
+   * the card (../sources/off/context). Signed-in users only (BR-4)
+   */
+  offContext?: { line: string; sample: number; refreshedAt: string };
 };
 
 /** One bounded batch of cards; the feed only changes when a new cycle runs (BR-1). */

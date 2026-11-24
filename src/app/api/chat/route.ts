@@ -73,7 +73,7 @@ export async function POST(request: Request) {
   }
   const body = parseBody(raw);
   if (!body) {
-    return fail(400, { code: 'invalid_request', message: `Tulis pesan (maksimal ${MESSAGE_MAX} karakter) untuk kartu yang kamu buka.` });
+    return fail(400, { code: 'invalid_request', message: `Tulis pesan (maksimal ${MESSAGE_MAX} karakter) untuk tren yang kamu buka.` });
   }
 
   const admin = createAdminClient();
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
   } else {
     const stored = body.insightId ? await readCard(supabase, body.insightId) : null;
     card = stored ? snapshotFromInsight(stored, role) : snapshotFromBrowser(body.card, body.insightId);
-    if (!card) return fail(404, { code: 'not_found', message: 'Kartu ini sudah tidak tersedia. Buka lagi dari Arsip.' });
+    if (!card) return fail(404, { code: 'not_found', message: 'Tren ini sudah tidak tersedia. Buka lagi dari Arsip.' });
   }
 
   let history: ChatTurn[] = [];
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     if ((count ?? 0) >= chatThreadLimit) {
       return fail(429, {
         code: 'thread_limit',
-        message: `Percakapan ini sudah mencapai ${chatThreadLimit} pesan. Mulai percakapan baru dari kartunya.`,
+        message: `Percakapan ini sudah mencapai ${chatThreadLimit} pesan. Mulai percakapan baru dari tren itu.`,
       });
     }
     history = (recent ?? []).reverse();

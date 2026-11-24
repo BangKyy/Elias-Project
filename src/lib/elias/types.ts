@@ -6,8 +6,18 @@ import type { YouTubeTrends, YouTubeVideo } from '../youtube';
 export type { NewsArticle, NewsContext } from '../gdelt';
 export type { YouTubeTrends, YouTubeVideo } from '../youtube';
 
-/** "GDELT" or "Google News", for prompts and briefings. Here, not in ../gdelt, so the client bundle stays free of it. */
-export const newsProviderLabel = (news: NewsContext) => (news.provider === 'google_news' ? 'Google News' : 'GDELT');
+const newsProviders = {
+  gdelt: { label: 'GDELT', window: { en: 'last 24 hours', id: '24 jam' } },
+  google_news: { label: 'Google News', window: { en: 'last 24 hours', id: '24 jam' } },
+  // Free plan: every article arrives 12 hours late (../newsdata)
+  newsdata: { label: 'newsdata.io', window: { en: 'published 12 to 48 hours ago', id: '12–48 jam lalu' } },
+};
+
+/** "GDELT", "Google News" or "newsdata.io", for prompts and briefings. Here, not in ../gdelt, so the client bundle stays free of it. */
+export const newsProviderLabel = (news: NewsContext) => newsProviders[news.provider ?? 'gdelt'].label;
+
+/** How old the news is: "last 24 hours" for prompts (`en`), "24 jam" for briefings (`id`). */
+export const newsWindowLabel = (news: NewsContext, lang: 'en' | 'id') => newsProviders[news.provider ?? 'gdelt'].window[lang];
 
 /**
  * What Elias knows about the brand. `id` is the cache and ownership key; it

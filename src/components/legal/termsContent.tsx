@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { chatEnabled } from '@/lib/chatFeature';
 import { LEGAL_OPERATOR } from '@/lib/legal';
+import { offEnabled } from '@/lib/sources/off/enabled';
 import { ContactLink, List, P, type LegalSection } from './LegalPage';
 
 // The Chat passages follow the same switch as Chat itself (lib/chatFeature)
@@ -10,7 +11,7 @@ export const termsSummary = [
   <>Akun dibuat dengan <strong>email dan kata sandi</strong>. Kamu bisa menghapusnya kapan saja dari halaman Profil.</>,
   <>Arsip tersimpan <strong>di browser perangkat yang kamu pakai</strong>, bukan di server kami, dan hilang bila data browser dihapus.</>,
   ...(chatEnabled
-    ? [<>Chat hanya membahas <strong>satu kartu tren</strong>. Pesannya disimpan 30 hari dan diproses model AI, jadi <strong>jangan tulis informasi rahasia</strong>.</>]
+    ? [<>Chat hanya membahas <strong>satu tren</strong>. Pesannya disimpan 30 hari dan diproses model AI, jadi <strong>jangan tulis informasi rahasia</strong>.</>]
     : []),
   <>Syarat ini tunduk pada <strong>hukum Republik Indonesia</strong>.</>,
 ];
@@ -55,9 +56,9 @@ export const termsSections: LegalSection[] = [
     content: (
       <>
         <P>
-          Setiap hari Elias mengumpulkan sinyal dari sumber publik: Google Trends, YouTube, GDELT, Google News, situs berita Indonesia (antara lain
+          Setiap hari Elias mengumpulkan sinyal dari sumber publik: Google Trends, YouTube, GDELT, Google News, newsdata.io, situs berita Indonesia (antara lain
           Antara, CNN Indonesia, detikNews, CNBC Indonesia, Republika, dan DailySocial), Wikipedia, dan GitHub. Dari sinyal itu Elias
-          menyusun kartu tren di Beranda.
+          menyusun daftar tren di Beranda.
         </P>
         <P>
           Saat kamu meminta analisis untuk brand kamu, Elias mengirim informasi brand dan topik tren ke model AI melalui layanan OpenRouter.
@@ -86,14 +87,14 @@ export const termsSections: LegalSection[] = [
           content: (
             <>
               <P>
-                Chat dipakai untuk bertanya lanjut tentang <strong>satu kartu tren</strong>: angle, format, copy, risiko, atau langkah yang bisa
-                kamu mulai hari ini. Chat dibuka dari tombol <strong>Tanya Elias</strong> di kartu Beranda atau Arsip, dan hanya untuk pengguna
+                Chat dipakai untuk bertanya lanjut tentang <strong>satu tren</strong>: angle, format, copy, risiko, atau langkah yang bisa
+                kamu mulai hari ini. Chat dibuka dari tombol <strong>Tanya Elias</strong> di setiap tren di Beranda atau Arsip, dan hanya untuk pengguna
                 yang sudah masuk dan menyelesaikan profil.
               </P>
               <List>
-                <li>Pertanyaan di luar kartu itu tidak dijawab. Elias akan mengarahkan kamu kembali ke kartunya.</li>
+                <li>Pertanyaan di luar tren itu tidak dijawab. Elias akan mengarahkan kamu kembali ke tren tersebut.</li>
                 <li>
-                  Ada batas pesan per hari dan per percakapan, serta batas bersama untuk semua pengguna agar kartu harian tetap bisa disusun.
+                  Ada batas pesan per hari dan per percakapan, serta batas bersama untuk semua pengguna agar daftar tren harian tetap bisa disusun.
                   Bila batas tercapai, Chat bisa dipakai lagi setelah batasnya direset.
                 </li>
                 <li>
@@ -132,7 +133,7 @@ export const termsSections: LegalSection[] = [
       <List>
         <li>Masuk ke akun orang lain atau mencoba membaca data pengguna lain.</li>
         <li>Mengakali batas harian analisis{chatEnabled ? ' atau Chat' : ''}, misalnya dengan membuat banyak akun untuk satu brand.</li>
-        {chatEnabled && <li>Memakai Chat untuk hal di luar kartu tren, atau mencoba membuat Elias mengabaikan aturannya.</li>}
+        {chatEnabled && <li>Memakai Chat untuk hal di luar tren, atau mencoba membuat Elias mengabaikan aturannya.</li>}
         <li>Mengganggu, membebani, atau mencoba membobol layanan Elias.</li>
         <li>Memakai hasil Elias untuk konten yang melanggar hukum yang berlaku di Indonesia.</li>
       </List>
@@ -142,10 +143,26 @@ export const termsSections: LegalSection[] = [
     id: 'konten-pihak-ketiga',
     title: 'Konten dan tautan pihak ketiga',
     content: (
-      <P>
-        Kartu tren menampilkan judul, tautan, dan angka (misalnya jumlah penayangan atau pencarian) dari sumber di atas. Konten aslinya milik
-        pemiliknya masing-masing. Tautan membuka situs pihak ketiga yang punya syarat dan kebijakan privasinya sendiri.
-      </P>
+      <>
+        <P>
+          Setiap tren menampilkan judul, tautan, dan angka (misalnya jumlah penayangan atau pencarian) dari sumber di atas. Konten aslinya milik
+          pemiliknya masing-masing. Tautan membuka situs pihak ketiga yang punya syarat dan kebijakan privasinya sendiri.
+        </P>
+        {offEnabled() && (
+          <P>
+            Sebagian tren Food & Beverage memuat satu angka tentang produk Indonesia di Open Food Facts, basis data produk terbuka yang diisi
+            kontributor, jadi angkanya tidak menggambarkan pasar. Berisi data dari{' '}
+            <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener noreferrer" className="underline">
+              Open Food Facts
+            </a>
+            , tersedia di bawah{' '}
+            <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener noreferrer" className="underline">
+              Open Database License
+            </a>
+            .
+          </P>
+        )}
+      </>
     ),
   },
   {

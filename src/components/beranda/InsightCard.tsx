@@ -1,4 +1,4 @@
-import { Clock, LockSimple } from '@phosphor-icons/react/dist/ssr';
+import { Barcode, Clock, LockSimple } from '@phosphor-icons/react/dist/ssr';
 import { archetypeDirections } from '@/lib/archetypes';
 import { creativeRoleLabels, type CreativeRole } from '@/lib/creativeRoles';
 import { formatDate } from '@/lib/dates';
@@ -88,6 +88,12 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
                 {insight.lifecycle}
               </p>
             )}
+            {flavour && insight.offContext && (
+              <p className="flex items-start gap-1.5 text-sm text-neutral-700">
+                <Barcode size={16} aria-hidden className="mt-0.5 shrink-0 text-gray-600" />
+                {insight.offContext.line}
+              </p>
+            )}
           </section>
 
           {insight.evidence && insight.evidence.length > 0 && (
@@ -100,6 +106,25 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
                   </li>
                 ))}
               </ul>
+              {/* ODbL attribution, only where an Open Food Facts line is shown: OFF is never a claimed source (BR-5) */}
+              {flavour && insight.offContext && (
+                <p className="mt-2.5 text-xs text-gray-600">
+                  Berisi data dari{' '}
+                  <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                    Open Food Facts
+                  </a>
+                  , tersedia di bawah{' '}
+                  <a
+                    href="https://opendatacommons.org/licenses/odbl/1-0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-primary"
+                  >
+                    Open Database License
+                  </a>
+                  .
+                </p>
+              )}
             </EvidenceSection>
           )}
 

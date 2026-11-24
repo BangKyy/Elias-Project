@@ -178,7 +178,7 @@ export default function TrendingTopics({ initial, brandLabel }: TrendingTopicsPr
           <div className="flex shrink-0 flex-col gap-2 md:items-end">
             <button type="button" onClick={refresh} disabled={loading} className={primaryCta}>
               {loading ? <CircleNotch size={20} aria-hidden className="animate-spin" /> : <Swap size={20} aria-hidden />}
-              {loading ? 'Mengambil tren…' : brand ? 'Perbarui lagi' : 'Cari tren sesuai brand kamu'}
+              {loading ? 'Mengambil topik…' : brand ? 'Perbarui lagi' : 'Cari topik sesuai brand kamu'}
             </button>
             {brand && !loading && (
               <button type="button" onClick={() => setTrending(initial)} className={quietLink}>
@@ -206,7 +206,7 @@ export default function TrendingTopics({ initial, brandLabel }: TrendingTopicsPr
       <div ref={scope} aria-busy={loading} className="flex flex-col gap-6 laptop:flex-row laptop:gap-2.5">
         {loading && (
           <p role="status" className="sr-only">
-            Mengambil tren terbaru…
+            Mengambil topik terbaru…
           </p>
         )}
         <ChipList

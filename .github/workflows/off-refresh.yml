@@ -1,0 +1,51 @@
+# Open Food Facts snapshot refresh (docs/MVP.md, Open Food Facts).
+# Streams OFF's 1.5 GB CSV dump and stores watchlist aggregates in
+# off_derived. Too long for a Vercel function, so it runs here.
+#
+# Repository settings it needs:
+#   secrets.SUPABASE_SECRET_KEY        the project's secret key
+#   vars.NEXT_PUBLIC_SUPABASE_URL      the project URL
+#   vars.OFF_USER_AGENT                "Elias/1.0 (contact email)", as OFF asks
+#   vars.SOURCE_OFF_ENABLED            "true" once the legal checklist passes;
+#                                      until then only manual runs happen
+
+name: Open Food Facts refresh
+
+on:
+  schedule:
+    # 03:00 WIB on the 1st of every month: enrichment changes slowly
+    - cron: '0 20 1 * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print the aggregate instead of storing it'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: off-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.event_name == 'workflow_dispatch' || vars.SOURCE_OFF_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Test the aggregation
+        run: npm run test:off
+      - name: Refresh the snapshot
+        run: node scripts/off-refresh.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
+        env:
+          OFF_USER_AGENT: ${{ vars.OFF_USER_AGENT }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}

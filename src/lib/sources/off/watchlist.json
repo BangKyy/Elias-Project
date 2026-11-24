@@ -1,0 +1,149 @@
+{
+  "_note": "Curated by hand from the tags Indonesian products actually carry in the OFF dump of 23 Nov 2026 (9,388 products; 87.5% have no category, 94% no Nutri-Score grade). Of the entries whose words appear in a trend's tags or claim, the first that yields a line wins, so specific entries come first. en:halal is left out on purpose: 2,495 products carry it and 6,634 carry no label at all, so a share would measure what contributors recorded and read as a claim about which products are not halal. On that dump only the Nutri-Score entries for susu, olahan susu, biskuit dan kue, camilan and minuman reach the sample threshold; the label entries have 2-3 labelled products and wait for more data, falling back to the broader entries below.",
+  "entries": [
+    {
+      "id": "no-added-sugar-beverages",
+      "match": [
+        "tanpa gula",
+        "rendah gula",
+        "less sugar",
+        "no sugar",
+        "zero sugar",
+        "gula"
+      ],
+      "category": "en:beverages",
+      "categoryName": "minuman",
+      "label": "en:no-added-sugar",
+      "labelName": "tanpa tambahan gula"
+    },
+    {
+      "id": "vegan-plant-based",
+      "match": [
+        "vegan",
+        "plant based",
+        "plant-based",
+        "nabati"
+      ],
+      "category": "en:plant-based-foods-and-beverages",
+      "categoryName": "makanan dan minuman nabati",
+      "label": "en:vegan",
+      "labelName": "vegan"
+    },
+    {
+      "id": "no-preservatives-snacks",
+      "match": [
+        "tanpa pengawet",
+        "pengawet"
+      ],
+      "category": "en:snacks",
+      "categoryName": "camilan",
+      "label": "en:no-preservatives",
+      "labelName": "tanpa pengawet"
+    },
+    {
+      "id": "coffees",
+      "match": [
+        "kopi",
+        "coffee",
+        "latte",
+        "espresso",
+        "kopi susu"
+      ],
+      "category": "en:coffees",
+      "categoryName": "kopi"
+    },
+    {
+      "id": "teas",
+      "match": [
+        "teh",
+        "tea",
+        "matcha",
+        "es teh"
+      ],
+      "category": "en:teas",
+      "categoryName": "teh"
+    },
+    {
+      "id": "milks",
+      "match": [
+        "susu",
+        "milk"
+      ],
+      "category": "en:milks",
+      "categoryName": "susu"
+    },
+    {
+      "id": "dairies",
+      "match": [
+        "yogurt",
+        "yoghurt",
+        "keju",
+        "cheese",
+        "dairy"
+      ],
+      "category": "en:dairies",
+      "categoryName": "olahan susu"
+    },
+    {
+      "id": "noodles",
+      "match": [
+        "mi instan",
+        "mie instan",
+        "mie",
+        "mi",
+        "ramen",
+        "noodle",
+        "noodles"
+      ],
+      "category": "en:noodles",
+      "categoryName": "mi"
+    },
+    {
+      "id": "biscuits-and-cakes",
+      "match": [
+        "biskuit",
+        "wafer",
+        "cookies",
+        "kue kering",
+        "kue"
+      ],
+      "category": "en:biscuits-and-cakes",
+      "categoryName": "biskuit dan kue"
+    },
+    {
+      "id": "condiments",
+      "match": [
+        "sambal",
+        "saus",
+        "kecap",
+        "bumbu"
+      ],
+      "category": "en:condiments",
+      "categoryName": "bumbu dan saus"
+    },
+    {
+      "id": "snacks",
+      "match": [
+        "camilan",
+        "cemilan",
+        "snack",
+        "snacks",
+        "keripik",
+        "jajanan"
+      ],
+      "category": "en:snacks",
+      "categoryName": "camilan"
+    },
+    {
+      "id": "beverages",
+      "match": [
+        "minuman",
+        "drink",
+        "drinks",
+        "beverage"
+      ],
+      "category": "en:beverages",
+      "categoryName": "minuman"
+    }
+  ]
+}

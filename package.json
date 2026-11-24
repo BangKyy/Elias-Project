@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "off:refresh": "node scripts/off-refresh.mjs",
+    "test:off": "node --experimental-strip-types --no-warnings --test scripts/off.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

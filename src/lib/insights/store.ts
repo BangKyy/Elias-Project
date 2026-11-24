@@ -94,6 +94,24 @@ const WIKIPEDIA_MIGRATION = '20261119090000_insight_wikipedia_source.sql';
 // And "github" until 20261119120000_insight_github_source.sql, under Google Trends too
 const GITHUB_MIGRATION = '20261119120000_insight_github_source.sql';
 const checkViolation = (error: { code?: string } | null) => error?.code === '23514';
+// Open Food Facts lines live apart from the cards, readable by signed-in users
+// only (BR-4); until 20261124090000_open_food_facts.sql is applied there are none
+const OFF_MIGRATION = '20261124090000_open_food_facts.sql';
+const missingTable = (error: { code?: string } | null) => error?.code === '42P01' || error?.code === 'PGRST205';
+
+type OffRow = { insight_id: string; line: string; sample: number; refreshed_at: string };
+
+/** The Open Food Facts lines of these cards; RLS answers guests with none. */
+async function readOffContext(supabase: SupabaseClient, ids: string[]): Promise<Map<string, NonNullable<Insight['offContext']>>> {
+  if (!ids.length) return new Map();
+  const { data, error } = await supabase
+    .from('insight_off_context')
+    .select('insight_id, line, sample, refreshed_at')
+    .in('insight_id', ids)
+    .returns<OffRow[]>();
+  if (error && !missingTable(error)) console.error('Insight store: reading Open Food Facts lines failed', error.message);
+  return new Map((data ?? []).map((row) => [row.insight_id, { line: row.line, sample: row.sample, refreshedAt: row.refreshed_at }]));
+}
 
 function readCards(supabase: SupabaseClient, from: string, columns: string) {
   return supabase
@@ -125,12 +143,14 @@ export async function readWindow(supabase: SupabaseClient, today: string): Promi
     cards = await readCards(supabase, from, cardColumns);
   }
   if (cycles.error || cards.error) console.error('Insight store: read failed', cycles.error ?? cards.error);
+  const off = await readOffContext(supabase, (cards.data ?? []).map((row) => row.id));
 
   return {
     cycleDates: new Set((cycles.data ?? []).map((row) => row.cycle_date as string)),
     cards: (cards.data ?? []).flatMap((row) => {
       const insight = toInsight(row);
-      return insight ? [{ cycleDate: row.cycle_date, insight }] : [];
+      const offContext = off.get(row.id);
+      return insight ? [{ cycleDate: row.cycle_date, insight: offContext ? { ...insight, offContext } : insight }] : [];
     }),
   };
 }
@@ -206,5 +226,17 @@ export async function saveCycle(date: string, insights: Insight[]): Promise<void
     console.error('Insight store: saving the cards failed', cardsError);
     // A cycle row without its cards would read as a quiet day; drop it so the day is generated again
     await admin.from('insight_cycles').delete().eq('cycle_date', date);
+    return;
   }
+
+  const offRows = insights.flatMap((insight) =>
+    insight.offContext
+      ? [{ insight_id: insight.id, line: insight.offContext.line, sample: insight.offContext.sample, refreshed_at: insight.offContext.refreshedAt }]
+      : [],
+  );
+  if (!offRows.length) return;
+  // A card without its line is still a valid card, so a failure here keeps the day
+  const { error: offError } = await admin.from('insight_off_context').insert(offRows);
+  if (missingTable(offError)) console.warn(`Insight store: saving cards without their Open Food Facts lines; apply ${OFF_MIGRATION}`);
+  else if (offError) console.error('Insight store: saving Open Food Facts lines failed', offError.message);
 }

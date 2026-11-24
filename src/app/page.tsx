@@ -93,8 +93,13 @@ async function Beranda({ searchParams, user }: { searchParams: SearchParams; use
   const feed = await getRecentFeed(supabase, { time, quiet: siklus === 'sepi' });
   // After the feed, so the first visit of the day reads the charts its cycle just stored
   const trending = await getTrending(feed.date);
-  // Guests get Tier-1 sources only (BR-4)
-  const allCards = flavour ? feed.cards : feed.cards.filter((card) => sources[card.insight.source].tier === 1);
+  // Guests get Tier-1 sources only (BR-4), without Open Food Facts lines:
+  // RLS hides stored ones, and today's cards may still carry theirs from memory
+  const allCards = flavour
+    ? feed.cards
+    : feed.cards
+        .filter((card) => sources[card.insight.source].tier === 1)
+        .map(({ insight: { offContext: _offContext, ...insight }, ...card }) => ({ ...card, insight }));
 
   // Signed-in users open on the cards for their brand; guests and profiles
   // without a category keep the whole feed. Nothing fitting falls back to all
@@ -182,11 +187,11 @@ async function Beranda({ searchParams, user }: { searchParams: SearchParams; use
         : todayCount || todayOnly
           ? null
           : scoped && allCards.some(isToday)
-            ? <>Hari ini belum ada tren yang cocok untuk brand <strong>{brand?.label}</strong>. Kartu di bawah dari hari-hari sebelumnya; tren lain hari ini ada di <strong>Semua</strong>.</>
+            ? <>Hari ini belum ada tren yang cocok untuk brand <strong>{brand?.label}</strong>. Tren di bawah dari hari-hari sebelumnya; tren lain hari ini ada di <strong>Semua</strong>.</>
             : // Today has nothing to add, but the days before still do
               feed.status === 'unavailable'
-              ? <><strong>Siklus hari ini belum tersedia</strong>, Elias mencoba lagi dalam beberapa menit. Kartu di bawah dari hari-hari sebelumnya.</>
-              : <>Hari ini <strong>tidak ada pergerakan baru</strong> yang layak ditindaklanjuti. Kartu di bawah dari hari-hari sebelumnya.</>;
+              ? <><strong>Siklus hari ini belum tersedia</strong>, Elias mencoba lagi dalam beberapa menit. Tren di bawah dari hari-hari sebelumnya.</>
+              : <>Hari ini <strong>tidak ada pergerakan baru</strong> yang layak ditindaklanjuti. Tren di bawah dari hari-hari sebelumnya.</>;
 
   const market = targetMarketLabel(profile?.target_market);
   const context = flavour && [

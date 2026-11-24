@@ -47,8 +47,8 @@ export default async function ChatPage() {
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold md:text-display-sm">Chat dengan Elias</h1>
           <p className="text-md text-gray-600">
-            Tanya lanjut soal satu kartu: angle, format, copy, atau langkah hari ini. Mulai dari tombol <strong>Tanya Elias</strong> di
-            kartu Beranda atau Arsip. Percakapan terhapus otomatis 30 hari setelah pesan terakhir.
+            Tanya lanjut soal satu tren: angle, format, copy, atau langkah hari ini. Mulai dari tombol <strong>Tanya Elias</strong> di
+            tren mana pun di Beranda atau Arsip. Percakapan terhapus otomatis 30 hari setelah pesan terakhir.
           </p>
         </div>
 
@@ -56,7 +56,7 @@ export default async function ChatPage() {
           <div className="flex flex-col items-start gap-4 rounded-xl bg-bg-white p-6 shadow-card">
             <ChatCircleText size={32} aria-hidden className="text-primary" />
             <p className="text-lg font-semibold">Belum ada percakapan.</p>
-            <p className="text-md text-gray-600">Buka kartu yang ingin kamu dalami, lalu pilih Tanya Elias.</p>
+            <p className="text-md text-gray-600">Buka tren yang ingin kamu dalami, lalu pilih Tanya Elias.</p>
             <div className="flex flex-wrap gap-2.5">
               <Link
                 href="/"

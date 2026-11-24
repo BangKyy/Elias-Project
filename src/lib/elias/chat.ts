@@ -176,7 +176,7 @@ export function cleanReply(text: string, maxLength = 2000): string {
 /** The fixed answer to an off-topic question, so the chat never turns into a general assistant. */
 export function offTopicReply(card: CardSnapshot): string {
   const title = card.title.length > 80 ? `${card.title.slice(0, 79)}…` : card.title;
-  return `Di sini Elias cuma membahas kartu "${title}". Tanya soal tren ini: angle, format, copy, atau langkah yang bisa kamu mulai hari ini.`;
+  return `Di sini Elias cuma membahas tren "${title}". Tanya soal tren itu: angle, format, copy, atau langkah yang bisa kamu mulai hari ini.`;
 }
 
 export type ChatReply = { ok: true; reply: string; onTopic: boolean; model: string } | { ok: false; status: number; error: ChatError };

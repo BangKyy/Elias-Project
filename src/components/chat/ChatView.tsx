@@ -149,9 +149,9 @@ export default function ChatView({ threadId, insightId, card, initialMessages, t
     if (!hydrated) return null;
     return (
       <section data-animate="page-item" className="flex max-w-2xl flex-col gap-4 pb-16">
-        <h1 className="text-2xl font-bold">Kartu ini tidak ditemukan</h1>
+        <h1 className="text-2xl font-bold">Tren ini tidak ditemukan</h1>
         <p className="text-md text-gray-600">
-          Kartu di Beranda hanya tersedia 5 hari. Simpan kartu ke Arsip agar tetap bisa kamu tanyakan ke Elias.
+          Tren di Beranda hanya tersedia 5 hari. Simpan tren ke Arsip agar tetap bisa kamu tanyakan ke Elias.
         </p>
         <div className="flex flex-wrap gap-2.5">
           <Link href="/" className={outlineButton}>
@@ -173,7 +173,7 @@ export default function ChatView({ threadId, insightId, card, initialMessages, t
           Semua percakapan
         </Link>
         <div className="flex flex-col gap-3">
-          <p className="font-mono text-xs font-bold tracking-wide text-gray-600 uppercase">Tanya Elias soal kartu ini</p>
+          <p className="font-mono text-xs font-bold tracking-wide text-gray-600 uppercase">Tanya Elias soal tren ini</p>
           {shown.verdict && (
             <div className="-ml-2">
               <VerdictTab verdict={shown.verdict} />
@@ -181,7 +181,7 @@ export default function ChatView({ threadId, insightId, card, initialMessages, t
           )}
           <h1 className="text-xl font-bold md:text-2xl">{shown.title}</h1>
           <p className="text-xs text-gray-600">
-            Elias hanya membahas kartu ini. Pesan disimpan 30 hari dan diproses model AI melalui OpenRouter, jadi jangan tulis
+            Elias hanya membahas tren ini. Pesan disimpan 30 hari dan diproses model AI melalui OpenRouter, jadi jangan tulis
             informasi rahasia.
           </p>
         </div>
@@ -272,7 +272,7 @@ export default function ChatView({ threadId, insightId, card, initialMessages, t
         </form>
       ) : (
         <p className="rounded-lg bg-neutral-100 px-4 py-3 text-sm text-gray-600">
-          Percakapan ini sudah mencapai {threadLimit} pesan. Mulai percakapan baru dari kartunya di Beranda atau Arsip.
+          Percakapan ini sudah mencapai {threadLimit} pesan. Mulai percakapan baru dari tren itu di Beranda atau Arsip.
         </p>
       )}
 

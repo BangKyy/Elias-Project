@@ -1,11 +1,15 @@
-import { searchGoogleNews } from './newsFeeds';
+import { fetchNewsdataHeadlines, searchNewsdata } from './newsdata';
+import { searchGoogleNews, type FeedArticle } from './newsFeeds';
 import { truncate } from './text';
 
 // GDELT DOC 2.0: free news context for a trend keyword. Server only.
 //
 // By 19 Nov 2026 GDELT refused this IP for most of the day (429 after 12
 // seconds, or no connection within 10), so a keyword lookup GDELT fails or
-// finds nothing for is asked of Google News RSS instead (fetchNewsContext).
+// finds nothing for is asked of Google News RSS instead, then of newsdata.io
+// (fetchNewsContext). newsdata.io also stands in for the cycle's headlines
+// (fetchIndonesiaHeadlines). Its articles are 12 to 48 hours old, so it
+// comes last and says so (provider 'newsdata').
 //
 // Rate limit, as observed on 2 Nov 2026: GDELT asks for one request every 5
 // seconds per IP and answers faster callers with HTTP 429 and a plain-text
@@ -31,7 +35,7 @@ export const GDELT_BUSY_NOTE =
 
 export type NewsArticle = { domain: string; title: string; url: string; seenAt: string | null };
 
-export type NewsProvider = 'gdelt' | 'google_news';
+export type NewsProvider = 'gdelt' | 'google_news' | 'newsdata';
 
 export type NewsContext = {
   status: 'ok' | 'empty' | 'rate_limited' | 'error' | 'skipped';
@@ -123,10 +127,14 @@ function toGdeltAnyQuery(keywords: string[]): string | null {
   return `(${terms.join(' OR ')})`;
 }
 
+const fromFeed = (found: FeedArticle[]): NewsArticle[] =>
+  found.map((article) => ({ domain: article.outlet, title: article.title, url: article.url, seenAt: article.publishedAt }));
+
 /**
- * News of the last 24 hours for a trend's keywords: GDELT first, Google News
- * when GDELT is busy, fails or finds nothing (it covers Indonesian outlets
- * better). Never throws.
+ * News for a trend's keywords: GDELT first, Google News when GDELT is busy,
+ * fails or finds nothing (it covers Indonesian outlets better), and
+ * newsdata.io's last 48 hours when Google fails or finds nothing too. Never
+ * throws.
  */
 export async function fetchNewsContext(keywords: string | string[]): Promise<NewsContext> {
   const query = toGdeltAnyQuery(typeof keywords === 'string' ? [keywords] : keywords);
@@ -137,17 +145,35 @@ export async function fetchNewsContext(keywords: string | string[]): Promise<New
   if (gdelt.status === 'ok') return gdelt;
 
   const found = await searchGoogleNews(query, MAX_ARTICLES);
-  // Google failed too: GDELT's note says why there is no news
-  if (!found) return gdelt;
-  const articles = found.map((article) => ({ domain: article.outlet, title: article.title, url: article.url, seenAt: article.publishedAt }));
-  return articles.length
-    ? { status: 'ok', provider: 'google_news', query, articles, summary: formatSummary(articles) }
-    : { status: 'empty', provider: 'google_news', query, articles, summary: 'Tidak ada liputan berita untuk kata kunci ini dalam 24 jam terakhir.' };
+  if (found?.length) {
+    const articles = fromFeed(found);
+    return { status: 'ok', provider: 'google_news', query, articles, summary: formatSummary(articles) };
+  }
+
+  const older = await searchNewsdata(query, MAX_ARTICLES);
+  if (older?.length) {
+    const articles = fromFeed(older);
+    return { status: 'ok', provider: 'newsdata', query, articles, summary: formatSummary(articles) };
+  }
+  // Every source failed: GDELT's note says why there is no news
+  if (!found && !older) return gdelt;
+  return found
+    ? { status: 'empty', provider: 'google_news', query, articles: [], summary: 'Tidak ada liputan berita untuk kata kunci ini dalam 24 jam terakhir.' }
+    : { status: 'empty', provider: 'newsdata', query, articles: [], summary: 'Tidak ada liputan berita untuk kata kunci ini dalam 48 jam terakhir.' };
 }
 
-/** The most relevant Indonesian news of the last 24 hours, for the daily cycle. */
-export function fetchIndonesiaHeadlines(maxArticles = 15): Promise<NewsContext> {
-  return fetchArticles('sourcecountry:indonesia', maxArticles, 'hybridrel', CYCLE_TIMEOUT_MS);
+/**
+ * The most relevant Indonesian news of the last 24 hours, for the daily
+ * cycle; newsdata.io's top outlets of 12 to 48 hours ago when GDELT has none.
+ */
+export async function fetchIndonesiaHeadlines(maxArticles = 15): Promise<NewsContext> {
+  const query = 'sourcecountry:indonesia';
+  const gdelt = await fetchArticles(query, maxArticles, 'hybridrel', CYCLE_TIMEOUT_MS);
+  if (gdelt.status === 'ok') return gdelt;
+  const found = await fetchNewsdataHeadlines();
+  if (!found?.length) return gdelt;
+  const articles = fromFeed(found.slice(0, maxArticles));
+  return { status: 'ok', provider: 'newsdata', query: null, articles, summary: formatSummary(articles) };
 }
 
 async function fetchArticles(

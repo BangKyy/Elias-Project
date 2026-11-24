@@ -2,7 +2,7 @@ import { creativeRoleLabels, type CreativeRole } from '../creativeRoles';
 import type { NewsContext } from '../gdelt';
 import type { Verdict } from '../insights/types';
 import { formatYouTubeTrends, type YouTubeTrends } from '../youtube';
-import { executionFormatLabels, newsProviderLabel, type EliasInsight } from './types';
+import { executionFormatLabels, newsProviderLabel, newsWindowLabel, type EliasInsight } from './types';
 
 export const decisionLabels: Record<Verdict, string> = { act: 'Eksekusi', watch: 'Pantau', skip: 'Lewati' };
 
@@ -34,7 +34,7 @@ export function executionBrief({ trendTopic, role, insight, news, youtube }: Bri
     if (insight.copy) lines.push('Copy:', `Hook: ${insight.copy.hook}`, `Caption: ${insight.copy.caption}`, `CTA: ${insight.copy.cta}`);
   }
   lines.push(`Kenapa: ${insight.why}`);
-  if (news.status === 'ok') lines.push('', `Konteks berita (${newsProviderLabel(news)}, 24 jam):`, news.summary);
+  if (news.status === 'ok') lines.push('', `Konteks berita (${newsProviderLabel(news)}, ${newsWindowLabel(news, 'id')}):`, news.summary);
   if (youtube.status === 'ok') lines.push('', `Trending YouTube ${youtube.regionCode} hari ini:`, formatYouTubeTrends(youtube));
   return lines.join('\n');
 }

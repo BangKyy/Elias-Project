@@ -103,6 +103,10 @@ Later
   - [x] Topic groups counted in code (`src/lib/insights/topics.ts`) across every collected video: terms and title phrases shared by 3+ videos from 2+ channels, sent as a `<topics>` block citing member videos
   - The prompt gets the top 8 of each chart, top 4 of each search, each topic's members, then movers: max 150 videos
   - [x] GDELT: one `sourcecountry:indonesia` headline batch per cycle, through the same spacing/backoff (not yet seen returning articles: rate-limited or unreachable from the dev IP)
+  - [x] newsdata.io (`src/lib/newsdata.ts`, 24 Nov 2026): GDELT's backup for the cycle's `<news>` headlines. Free plan: 200 credits/day, 1 credit per request of up to 10 articles, 60 requests per 15 minutes, and every article arrives 12 hours after publication (nothing older than 48h), so it backs up and never leads
+    - Indonesian outlets in Indonesian (`country=id&language=id`), duplicates removed. Headlines: 2 requests per cycle run (`prioritydomain=top`, two sets of 5 brand-relevant categories; newest-first alone covered only 3 minutes), max 15, max 3 per outlet, cached 1h. Their `<news>` block says "published 12 to 48 hours ago" and each line carries its time; cards resting on them have source `news` ("Media Indonesia")
+    - Credits: read from each answer's `X-API-Limit-Remaining` (the account's own count, the same for every instance, so no ledger). Elias stops once `NEWS_DAILY_CREDIT_CAP` (default 150) are spent; keyword lookups stop 20 earlier so the cycle keeps a reserve. The renewal time isn't documented, so a stop is rechecked every 3 hours. Rate limit → wait for `X-RateLimit-Reset`; a refused key or parameter → 1h pause
+    - Env: `NEWSDATA_API_KEY` (optional; without it newsdata.io is skipped), `NEWS_DAILY_CREDIT_CAP`
   - [x] Google Trends (`src/lib/googleTrends.ts`): the public "Trending now" RSS for Indonesia (10 newest searches, ~2 hours, traffic level + 3 news links each); `google-trends-api` is unusable (its daily endpoint answers 404)
     - Captured at most once an hour on any Beranda visit and by the cycle, merged into `google_trends_snapshots` per term per WIB day (`src/lib/insights/searchTrends.ts`); kept 30 days by pg_cron `purge-old-google-trends`
     - The prompt gets up to 20 searches seen in the last 24h as `<search_trends>` (`G1`…), with traffic level, start time, "N hari berturut-turut" streak and news titles; evidence links to the term's Trends explore page
@@ -127,6 +131,33 @@ Later
   - [ ] Not yet seen live: a cycle comparing against a stored day (migration applied 2026-11-04; needs two days of cycles)
 - [x] Explicit no-signal branch feeding the quiet-day state (V6): an empty trend list from the model is a quiet day
 
+### Open Food Facts (built 24 Nov 2026, off until the checklist passes)
+
+A context source for Food & Beverage cards, per the OFF setup guide (24 Nov 2026). Never a card trigger, never a Layer A backup, never a claimed source (BR-5): it adds one line to a Food & Beverage card the trends call already picked, and a card without one is still valid.
+
+- Data from the dump, never the API (production API calls are allowed only one per real user scan). `scripts/off-refresh.mjs` streams the CSV (1.5 GB compressed; the JSONL is 13.8 GB, both 23 Nov 2026) and keeps counts for watchlist tags only. Runs in GitHub Actions (`.github/workflows/off-refresh.yml`, 1st of each month 03:00 WIB, plus manual runs that default to `--dry-run`); Vercel Hobby's 300 s limit can't hold it
+- Storage (`20261124090000_open_food_facts.sql`): schema `off_derived` (`tag_stats`, `pair_stats`), server only, read and written by `off_replace_snapshot` / `off_tag_stats` / `off_pair_stats`, which touch `off_derived` alone: it is never joined with another schema (ODbL share-alike). What leaves it is one composed sentence per card in `public.insight_off_context`, readable by signed-in users only (BR-4; `insights` itself is readable by guests)
+- The cycle (`src/lib/sources/off/context.ts`) matches each Food & Beverage trend to the curated watchlist (`src/lib/sources/off/watchlist.json`), composes the line in code (`compose.ts`: the model never writes the number), passes it to the per-role calls (BR-6) and stores it with the card (AR-9). Opening a card never calls OFF or a model. Below `OFF_MIN_SAMPLE` (30) products, or with fewer than 5 labelled products, there is no line
+- Card: the line under "Mengapa penting" and the ODbL attribution under the sources, signed-in only. Guests' cards drop it even from memory. Syarat shows the attribution only while enabled
+- First scan (24 Nov 2026, dump of 23 Nov): 9,388 Indonesian products of 4.9 million; 87.5% have no category, 94% no Nutri-Score grade. Largest usable categories: plant-based foods and beverages 319, snacks 237, beverages 217, dairies 151. Labels: halal 2,495, no preservatives 72, vegan 51, no added sugar 27; 6,634 products have none. `en:halal` is left out of the watchlist: a share would measure what contributors recorded and read as a claim about which products are not halal
+- Dry run of `off-refresh.mjs` on the same dump (24 Nov 2026, 654 s, nothing stored): 5 of 12 watchlist entries yield a line, all Nutri-Score ones: susu (47 graded products), olahan susu (113), biskuit dan kue (56), camilan (116), minuman (124). Kopi, teh, mi and bumbu have under 30 graded products. The three label entries (no added sugar, vegan, no preservatives) have only 2–3 labelled products in their category, so they yield nothing yet; a trend naming them falls back to its broader entry (a "gula" trend gets the minuman line)
+- Env: `SOURCE_OFF_ENABLED` (off), `OFF_MIN_SAMPLE`; the workflow reads repository secret `SUPABASE_SECRET_KEY` and variables `NEXT_PUBLIC_SUPABASE_URL`, `OFF_USER_AGENT`, `SOURCE_OFF_ENABLED`
+- Not built: the guide's DS-1 adapter interface (none exists yet: the Google Trends source has no adapter either), and the `CLAUDE.md` and `claude/data-sources-per-category.md` it refers to, which are not in this repository
+
+Checklist before `SOURCE_OFF_ENABLED=true`:
+- [ ] Legal: is `off_derived.tag_stats` an adapted database that triggers share-alike; does one OFF number in an insight count as combining databases; does a separate schema in the same Postgres count as combining; do the attribution text and placement satisfy the ODbL
+- [ ] The full terms of use read, including commercial use (https://world.openfoodfacts.org/terms-of-use)
+- [x] Parser checked against the current dump's columns (`countries_tags`, `categories_tags`, `labels_tags`, `nutriscore_grade`; the script stops if one goes missing)
+- [x] Watchlist built from tags Indonesian products actually carry (first scan above); [ ] retune `OFF_MIN_SAMPLE` after seeing the first stored snapshot
+- [x] Test: no product rows and no tags outside the watchlist are stored (`npm run test:off`)
+- [x] Separation: the three functions read or write `off_derived` only; nothing else references it
+- [x] Test: under the threshold there is no line, and the card ships without it (`npm run test:off`; `offContextFor` returns nothing for that card)
+- [x] Opening a card calls neither OFF nor a model: the line is read from `insight_off_context` with the card
+- [x] Attribution in the card's sources and on Syarat; OFF is in no source picker or coverage claim
+- [x] A failed refresh never stops the cycle: the cycle only reads the stored snapshot, and a failed read means no line
+- [x] `20261124090000_open_food_facts.sql` applied 24 Nov 2026 (in the migration history as `open_food_facts`); checked: anon and authenticated have no access to `off_derived` or the three functions, the service role has; `insight_off_context` has one select policy, for authenticated. The advisor's only new notes are the intended "RLS enabled, no policy" on the two `off_derived` tables
+- [ ] Repository secret and variables set, one manual workflow run with `dry_run` off
+
 ## MVP 5a — Live role-tailored analysis (OpenRouter free tier)
 
 - [x] `POST /api/elias/insight` with `{ brandContext, trendTopic, userRole }`; signed-in only, brand id must be the caller's
@@ -137,6 +168,7 @@ Later
 - [x] Analysis panel on Beranda cards: Simpan ke Arsip (brief goes into the note), Salin Execution Brief
 - [x] GDELT news context (`src/lib/gdelt.ts`): 3 headlines from the last 24h, fed into the prompt as data
 - [x] GDELT safeguards: own 5.5s spacing, 5-minute backoff after a 429, 1h cache, never fails the insight
+- [x] Keyword news falls back GDELT → Google News RSS → newsdata.io (`qInMeta`, by relevance, last 48h; `q` also matches article bodies and found the keyword in no title). A newsdata.io answer is labelled "12–48 jam lalu" on the brief and email, and the prompt never calls it today's news
 - [x] Card shows `// CONTEXT: GDELT VERIFIED` with the headlines as links, or a plain note when news is unavailable
 - [ ] Not yet seen live: a GDELT answer with articles (the dev IP was rate-limited throughout testing)
 - [x] YouTube trending chart (`src/lib/youtube.ts`, Indonesia top 3, 1 unit/call, 1h shared cache), fetched in parallel with GDELT

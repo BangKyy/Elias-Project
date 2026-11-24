@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
     label: 'Chat',
     href: '/chat',
     ready: chatEnabled,
-    description: 'Tanya Elias lebih lanjut soal kartu tren untuk brand kamu.',
+    description: 'Tanya Elias lebih lanjut soal tren untuk brand kamu.',
     badge: chatEnabled ? 'new' : 'soon',
   },
 ];

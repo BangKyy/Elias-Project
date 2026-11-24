@@ -43,7 +43,7 @@ export function PersonalSection({ userId, profile }: SectionProps) {
       title="Data Diri"
       description={
         <>
-          Peran menentukan <strong>so what</strong> di setiap kartu Beranda dan analisis Elias.
+          Peran menentukan <strong>so what</strong> di setiap tren di Beranda dan analisis Elias.
         </>
       }
     >
@@ -116,7 +116,7 @@ export function BrandSection({ profile }: SectionProps) {
     <ProfileSection
       id="brand"
       title="Brand"
-      description="Kategori, target market, archetype, dan lokasi menentukan kartu mana yang muncul untukmu dan aksi yang Elias sarankan."
+      description="Kategori, target market, archetype, dan lokasi menentukan tren mana yang muncul untukmu dan aksi yang Elias sarankan."
     >
       <SectionForm
         dirty={form.dirty}

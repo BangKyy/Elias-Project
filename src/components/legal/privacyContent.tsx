@@ -10,7 +10,7 @@ export const privacySummary = [
   <>Kami menyimpan <strong>email, profil, dan jawaban brand</strong> kamu untuk menjalankan akun dan menyesuaikan saran Elias.</>,
   chatEnabled ? (
     <>
-      Untuk analisis dan Chat, <strong>informasi brand, kartu tren, dan pesan Chat yang kamu tulis</strong> dikirim ke model AI melalui
+      Untuk analisis dan Chat, <strong>informasi brand, tren, dan pesan Chat yang kamu tulis</strong> dikirim ke model AI melalui
       OpenRouter. Nama dan email kamu tidak ikut dikirim. Percakapan Chat disimpan <strong>30 hari</strong>.
     </>
   ) : (
@@ -58,14 +58,14 @@ export const privacySections: LegalSection[] = [
           koordinatnya.
         </P>
         <P>
-          <strong>Penggunaan model AI.</strong> Catatan setiap permintaan ke model AI: jenisnya (analisis, kartu harian
+          <strong>Penggunaan model AI.</strong> Catatan setiap permintaan ke model AI: jenisnya (analisis, daftar tren harian
           {chatEnabled ? ', atau Chat' : ''}), akun yang memintanya bila ada, dan waktunya, tanpa isi permintaan. Catatan ini dipakai untuk menerapkan batas harian. Hasil analisis juga disimpan
           sementara agar analisis yang sama tidak dibuat dua kali.
         </P>
         {chatEnabled && (
           <P>
-            <strong>Chat.</strong> Pesan yang kamu tulis di Chat dan balasan Elias, beserta salinan kartu tren yang kamu tanyakan. Bila kartu
-            itu dibuka dari Arsip, salinannya ikut memuat catatan Arsip kamu untuk kartu tersebut. Setiap balasan Elias disimpan
+            <strong>Chat.</strong> Pesan yang kamu tulis di Chat dan balasan Elias, beserta salinan tren yang kamu tanyakan. Bila tren
+            itu dibuka dari Arsip, salinannya ikut memuat catatan Arsip kamu untuk tren tersebut. Setiap balasan Elias disimpan
             bersama nama model AI yang menulisnya. Bila kamu menilai balasan (membantu atau kurang membantu, dan alasannya bila ada),
             penilaian itu disimpan bersama pesannya.
           </P>
@@ -86,16 +86,16 @@ export const privacySections: LegalSection[] = [
     content: (
       <List>
         <li>Membuat akun, memverifikasi email, menjaga kamu tetap masuk, dan memulihkan kata sandi.</li>
-        <li>Menyesuaikan Beranda: kategori brand menentukan kartu yang tampil lebih dulu, dan target market menentukan urutannya.</li>
+        <li>Menyesuaikan Beranda: kategori brand menentukan tren yang tampil lebih dulu, dan target market menentukan urutannya.</li>
         <li>Menyusun analisis Elias sesuai brand dan peran kamu.</li>
-        {chatEnabled && <li>Menjawab pertanyaan lanjutan kamu tentang satu kartu tren di Chat, dan menyimpan percakapannya agar bisa kamu lanjutkan.</li>}
+        {chatEnabled && <li>Menjawab pertanyaan lanjutan kamu tentang satu tren di Chat, dan menyimpan percakapannya agar bisa kamu lanjutkan.</li>}
         {chatEnabled && (
           <li>
             Memperbaiki Chat dari penilaian balasan: aturan yang diberikan ke model AI dan pilihan modelnya. Penilaian tidak dikirim ke
             OpenRouter atau penyedia model AI.
           </li>
         )}
-        <li>Menerapkan batas harian analisis{chatEnabled ? ' dan Chat' : ''} per akun, dan menjaga kuota model AI tetap cukup untuk kartu harian.</li>
+        <li>Menerapkan batas harian analisis{chatEnabled ? ' dan Chat' : ''} per akun, dan menjaga kuota model AI tetap cukup untuk daftar tren harian.</li>
         <li>Menyimpan jam email pagi dan pilihan Always On. Pengiriman email pagi belum aktif.</li>
         <li>Memahami dari mana pengguna mengetahui Elias, dari jawaban survei onboarding.</li>
       </List>
@@ -119,7 +119,7 @@ export const privacySections: LegalSection[] = [
             {chatEnabled && (
               <>
                 {' '}
-                Untuk Chat, OpenRouter juga menerima kartu tren yang kamu tanyakan, beberapa pesan terakhir percakapan, dan pesan baru kamu.
+                Untuk Chat, OpenRouter juga menerima tren yang kamu tanyakan, beberapa pesan terakhir percakapan, dan pesan baru kamu.
                 Elias memakai model gratis, dan sebagian penyedianya bisa mencatat atau memakai isi permintaan untuk melatih model mereka.
                 Karena itu <strong>jangan menulis informasi rahasia</strong>, data pelanggan, atau data pribadi orang lain di Chat.
               </>
@@ -131,7 +131,7 @@ export const privacySections: LegalSection[] = [
           </li>
         </List>
         <P>
-          Untuk menyusun kartu tren, server Elias juga mengambil data publik dari Google Trends, YouTube, GDELT, Google News, situs berita,
+          Untuk menyusun daftar tren, server Elias juga mengambil data publik dari Google Trends, YouTube, GDELT, Google News, newsdata.io, situs berita,
           Wikipedia, dan GitHub. Permintaan itu memakai kata kunci tren, bukan data pribadi kamu.
         </P>
       </>

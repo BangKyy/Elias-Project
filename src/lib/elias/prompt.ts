@@ -5,7 +5,7 @@ import type { NewsContext } from '../gdelt';
 import { formatGitHubTrends, type GitHubTrends } from '../github';
 import { formatYouTubeTrends, type YouTubeTrends } from '../youtube';
 import { targetMarketLabel } from '../targetMarkets';
-import { executionFormats, newsProviderLabel, type BrandContext, type InsightRequest } from './types';
+import { executionFormats, newsProviderLabel, newsWindowLabel, type BrandContext, type InsightRequest } from './types';
 
 /**
  * Elias's persona (PRD Ch. 4) as a system prompt. The register is fixed; only
@@ -38,7 +38,7 @@ RESTRAINT
 - You do not see TikTok or Instagram trend data. Never claim or imply coverage of those platforms.
 
 NEWS CONTEXT
-- The user message may include recent news headlines from GDELT or Google News. Use them to judge relevance: is the story still live, is it sensitive, does it fit the archetype.
+- The user message may include recent news headlines from GDELT, Google News or newsdata.io. newsdata.io headlines were published 12 to 48 hours ago: never call them today's or breaking news. Use them to judge relevance: is the story still live, is it sensitive, does it fit the archetype.
 - Only refer to headlines that are actually listed. If there are none, base the call on the trend signal alone and do not mention news.
 - The user message may also list what is trending on YouTube in Indonesia today. That is the general chart, not videos about this trend: use it only to judge competition for attention or to borrow a format, and never present it as evidence for the trend.
 - For technology, education and finance brands the user message may also list <github_trending>: the most-starred GitHub repositories created in the last 7 days, worldwide. It shows what developers are building and bookmarking, not what Indonesian consumers see: stars are never reach, viewers or customers. Use it only when a repository is about the same subject as this trend, or to show the brand a tool, format or capability it could pick up; otherwise ignore it and do not mention GitHub. Never recommend or name a repository for hacking, cracking, credential or account abuse, scraping personal data, piracy or gambling.
@@ -145,7 +145,7 @@ ${describeBrand(request.brandContext)}
 ${describeTrend(request)}
 </trend>
 
-<news source="${newsProviderLabel(news)}, last 24 hours">
+<news source="${newsProviderLabel(news)}, ${newsWindowLabel(news, 'en')}">
 ${headlines}
 </news>
 
