@@ -81,9 +81,15 @@ export function normalizeMatches(answer) {
   });
 }
 
-/** The league table (TOTAL, no group) of a /competitions/{code}/standings answer; [] for none. */
+/**
+ * The league table of a /competitions/{code}/standings answer; [] for none.
+ * The only TOTAL table, whatever its group: live answers label most leagues'
+ * one table `group: "Matchday"` (24 Nov 2026), though the docs show null.
+ * With several (real groups), only an ungrouped one.
+ */
 export function normalizeStandings(answer) {
-  const total = (Array.isArray(answer?.standings) ? answer.standings : []).find((entry) => entry?.type === 'TOTAL' && !entry.group);
+  const totals = (Array.isArray(answer?.standings) ? answer.standings : []).filter((entry) => entry?.type === 'TOTAL');
+  const total = totals.length === 1 ? totals[0] : totals.find((entry) => !entry.group);
   const season = Number.parseInt(String(answer?.season?.startDate ?? '').slice(0, 4), 10);
   return (Array.isArray(total?.table) ? total.table : []).flatMap((row) => {
     const team = nameOf(row?.team);
@@ -180,7 +186,7 @@ async function main() {
   if (!stored) process.exit(1);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exit(1);

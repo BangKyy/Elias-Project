@@ -40,6 +40,14 @@ test('only names, dates and numbers are kept: no crests, players, odds or goals'
   for (const leak of ['crest', 'png', 'Coach', 'Player', 'Scorer', 'Ref', 'homeWin', 'WWDWW']) assert.ok(!kept.includes(leak), leak);
 });
 
+test('a league table is read whatever its group label, a group stage never stands in for it', () => {
+  // Live PL answer, 24 Nov 2026: the one TOTAL table carries group "Matchday"
+  const labelled = { ...standingsAnswer, standings: [{ ...standingsAnswer.standings[0], group: 'Matchday' }, standingsAnswer.standings[1]] };
+  assert.equal(normalizeStandings(labelled).length, 2);
+  const groups = { standings: ['GROUP_A', 'GROUP_B'].map((group) => ({ ...standingsAnswer.standings[0], group })) };
+  assert.deepEqual(normalizeStandings(groups), []);
+});
+
 test('a cup has no table: standings 404 is a valid empty answer', async () => {
   const get = createClient({ token: 't', rpm: 100_000, fetch: async () => new Response('', { status: 404 }) });
   assert.equal(await get('/competitions/CL/standings'), null);
