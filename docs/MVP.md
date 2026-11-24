@@ -131,7 +131,9 @@ Later
   - [ ] Not yet seen live: a cycle comparing against a stored day (migration applied 2026-11-04; needs two days of cycles)
 - [x] Explicit no-signal branch feeding the quiet-day state (V6): an empty trend list from the model is a quiet day
 
-### Open Food Facts (built 24 Nov 2026, off until the checklist passes)
+### Open Food Facts (built and switched on 24 Nov 2026)
+
+Switched on 24 Nov 2026 (`SOURCE_OFF_ENABLED=true` in Vercel Production and on the fork's Actions) by the product owner's decision, with the two legal items below not carried out. The risk accepted: if `off_derived.tag_stats` counts as an adapted database, the ODbL may require offering it under the same licence on request (13 rows of public product counts, nothing about users or brands), and Open Food Facts' own terms of use are unread. The flag can be set back to `false` at any time.
 
 A context source for Food & Beverage cards, per the OFF setup guide (24 Nov 2026). Never a card trigger, never a Layer A backup, never a claimed source (BR-5): it adds one line to a Food & Beverage card the trends call already picked, and a card without one is still valid.
 
@@ -147,6 +149,7 @@ A context source for Food & Beverage cards, per the OFF setup guide (24 Nov 2026
 Checklist before `SOURCE_OFF_ENABLED=true`:
 - [ ] Legal: is `off_derived.tag_stats` an adapted database that triggers share-alike; does one OFF number in an insight count as combining databases; does a separate schema in the same Postgres count as combining; do the attribution text and placement satisfy the ODbL
 - [ ] The full terms of use read, including commercial use (https://world.openfoodfacts.org/terms-of-use)
+  - Both legal items not carried out (noted 24 Nov 2026): no legal review is planned for now; the feature was switched on without it, see above
 - [x] Parser checked against the current dump's columns (`countries_tags`, `categories_tags`, `labels_tags`, `nutriscore_grade`; the script stops if one goes missing)
 - [x] Watchlist built from tags Indonesian products actually carry (first scan above); [ ] retune `OFF_MIN_SAMPLE` after seeing the first stored snapshot
 - [x] Test: no product rows and no tags outside the watchlist are stored (`npm run test:off`)
@@ -157,7 +160,7 @@ Checklist before `SOURCE_OFF_ENABLED=true`:
 - [x] A failed refresh never stops the cycle: the cycle only reads the stored snapshot, and a failed read means no line
 - [x] `20261124090000_open_food_facts.sql` applied 24 Nov 2026 (in the migration history as `open_food_facts`); checked: anon and authenticated have no access to `off_derived` or the three functions, the service role has; `insight_off_context` has one select policy, for authenticated. The advisor's only new notes are the intended "RLS enabled, no policy" on the two `off_derived` tables
 - [x] Secret and variables set on the fork `BangKyy/Elias-Project`, which runs the refresh (24 Nov 2026): the org repo `sumurcreative-intern/Elias-Project` needs an admin to set them, and has no `SOURCE_OFF_ENABLED`, so its copy of the workflow never runs on schedule. First run with `dry_run` off on 24 Nov 2026 (run 45341405799, 1 min 22 s; the dump streamed in 63 s): tests passed, 9,388 Indonesian products, 13 tag rows and 3 pairs stored, the same as the local dry run
-- [ ] `SOURCE_OFF_ENABLED=true` both in Vercel (the cycle and Syarat read it) and as the fork's Actions variable (the monthly schedule), once the legal items above are answered
+- [x] `SOURCE_OFF_ENABLED=true` in Vercel Production (the cycle and Syarat read it) and as the fork's Actions variable (the monthly schedule), 24 Nov 2026
 
 ### PubMed (built and switched on 24 Nov 2026)
 
