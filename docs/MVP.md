@@ -191,7 +191,9 @@ Checklist before `SOURCE_PUBMED_ENABLED=true`:
 - [x] Migration present in the database (checked 24 Nov 2026): `evidence_cache.pubmed_counts`, `insight_evidence_context` (select for authenticated only), both functions (service role only), all matching `20261124100000_pubmed_evidence.sql`. Applied outside the migration history (not listed there), like the 23 Nov migrations
 - [x] Vercel Production env set 24 Nov 2026: `SOURCE_PUBMED_ENABLED=false`, `NCBI_TOOL`, `NCBI_EMAIL`, `PUBMED_RPS`, `PUBMED_WINDOW_YEARS`, `PUBMED_CACHE_TTL_DAYS`, `PUBMED_MIN_TOTAL`, and `NCBI_API_KEY` (Sensitive, piped from `.env.local` with the Vercel CLI). Switching on is now `SOURCE_PUBMED_ENABLED=true` and a redeploy
 
-### football-data.org (built 24 Nov 2026, off until the checklist passes)
+### football-data.org (built and switched on 24 Nov 2026)
+
+Switched on 24 Nov 2026 (`SOURCE_FOOTBALLDATA_ENABLED=true` in Vercel Production and on the fork's Actions) by the product owner's decision, with the provider's written answer and the legal items below not carried out. The flag can be set back to `false` at any time; the next daily run then purges the snapshot.
 
 Schedule and standings context for Sports cards, per the football-data.org setup guide (24 Nov 2026). Never a card trigger, never a live score, never odds, betting or predictions. Covers the 12 free-plan competitions only (none Indonesian), so a trend about Liga 1 or the national team gets no line.
 
@@ -209,7 +211,7 @@ Checklist before `SOURCE_FOOTBALLDATA_ENABLED=true`:
 - [ ] Legal: is a provider's informal "go ahead" enough without a contract; do derived insights carry obligations beyond §7.1 and §9.1
 - [x] Token registered (free plan) and stored as a secret: `.env.local` and the fork's `FOOTBALLDATA_API_TOKEN` (piped, 24 Nov 2026), never in Vercel
 - [x] The 12 codes and IDs confirmed with `GET /v4/competitions`
-- [x] Parser checked against live v4 answers with the token (workflow dry run 45371879871, 24 Nov 2026: 12/12 competitions in 230 s; WC and EC have no fixtures or table between tournaments) and against the documented shapes, incl. standings 404 for cups (`npm run test:football`). The live run found what the docs don't say: most leagues label their one TOTAL table `group: "Matchday"`, not null, so only the Championship's table was read until the parser took the single TOTAL table whatever its label
+- [x] Parser checked against live v4 answers with the token (workflow dry run 45371879871, 24 Nov 2026: 12/12 competitions in 230 s; WC and EC have no fixtures or table between tournaments) and against the documented shapes, incl. standings 404 for cups (`npm run test:football`). The live run found what the docs don't say: most leagues label their one TOTAL table `group: "Matchday"`, not null, so only the Championship's table was read until the parser took the single TOTAL table whatever its label. A second dry run (45373418618) read every league's table; the Champions League, though a `CUP`, answered with its 36-team league-phase table rather than 404
 - [x] Topic map to competitions, whole words, checked against false matches (currency, Liga 1)
 - [x] Test: no crests, photos or player data kept
 - [x] Test: requests carry only competition codes, dates and the token (in a header, never the URL)
@@ -221,7 +223,7 @@ Checklist before `SOURCE_FOOTBALLDATA_ENABLED=true`:
 - [x] Attribution in the card's sources and on Syarat; not in any source picker or the guest feed
 - [x] Test: no line mentions odds, betting or predictions
 - [x] `20261124110000_football_data.sql` applied 24 Nov 2026 (in the migration history as `football_data`); checked: anon and authenticated have no access to `sports_cache` or the three functions, the service role has; the source check allows `footballdata`; a test competition stored, read back and purged (all three tables empty after)
-- [ ] Fork secret `FOOTBALLDATA_API_TOKEN` and variable `SOURCE_FOOTBALLDATA_ENABLED` set; `SOURCE_FOOTBALLDATA_ENABLED` in Vercel
+- [x] Fork secret `FOOTBALLDATA_API_TOKEN` and variable `SOURCE_FOOTBALLDATA_ENABLED=true` set; `SOURCE_FOOTBALLDATA_ENABLED=true` in Vercel Production (24 Nov 2026)
 
 ## MVP 5a — Live role-tailored analysis (OpenRouter free tier)
 
