@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { chatEnabled } from '@/lib/chatFeature';
 import { LEGAL_OPERATOR } from '@/lib/legal';
+import { pubmedEnabled } from '@/lib/sources/evidence/enabled';
 import { ContactLink, List, P, type LegalSection } from './LegalPage';
 
 // The Chat passages follow the same switch as Chat itself (lib/chatFeature),
@@ -132,7 +133,8 @@ export const privacySections: LegalSection[] = [
         </List>
         <P>
           Untuk menyusun daftar tren, server Elias juga mengambil data publik dari Google Trends, YouTube, GDELT, Google News, newsdata.io, situs berita,
-          Wikipedia, dan GitHub. Permintaan itu memakai kata kunci tren, bukan data pribadi kamu.
+          Wikipedia, dan GitHub{pubmedEnabled() ? ', serta jumlah studi dari PubMed untuk sebagian tren Health & Wellness' : ''}. Permintaan itu memakai kata kunci
+          tren, bukan data pribadi kamu atau nama brand kamu.
         </P>
       </>
     ),

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "off:refresh": "node scripts/off-refresh.mjs",
-    "test:off": "node --experimental-strip-types --no-warnings --test scripts/off.test.mjs"
+    "test:off": "node --experimental-strip-types --no-warnings --test scripts/off.test.mjs",
+    "test:evidence": "node --experimental-strip-types --no-warnings --test scripts/evidence.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

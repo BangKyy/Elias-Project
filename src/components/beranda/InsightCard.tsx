@@ -1,4 +1,4 @@
-import { Barcode, Clock, LockSimple } from '@phosphor-icons/react/dist/ssr';
+import { Barcode, BookOpenText, Clock, LockSimple } from '@phosphor-icons/react/dist/ssr';
 import { archetypeDirections } from '@/lib/archetypes';
 import { creativeRoleLabels, type CreativeRole } from '@/lib/creativeRoles';
 import { formatDate } from '@/lib/dates';
@@ -94,6 +94,12 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
                 {insight.offContext.line}
               </p>
             )}
+            {flavour && insight.pubmedContext && (
+              <p className="flex items-start gap-1.5 text-sm text-neutral-700">
+                <BookOpenText size={16} aria-hidden className="mt-0.5 shrink-0 text-gray-600" />
+                {insight.pubmedContext.line}
+              </p>
+            )}
           </section>
 
           {insight.evidence && insight.evidence.length > 0 && (
@@ -123,6 +129,16 @@ export default function InsightCard({ insight, flavour }: { insight: Insight; fl
                     Open Database License
                   </a>
                   .
+                </p>
+              )}
+              {/* NLM attribution, only where a PubMed line is shown; no endorsement implied (BR-5) */}
+              {flavour && insight.pubmedContext && (
+                <p className="mt-2.5 text-xs text-gray-600">
+                  Dari{' '}
+                  <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                    MEDLINE®/PubMed®
+                  </a>
+                  , basis data National Library of Medicine AS.
                 </p>
               )}
             </EvidenceSection>

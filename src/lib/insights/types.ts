@@ -88,6 +88,12 @@ export type Insight = {
    * the card (../sources/off/context). Signed-in users only (BR-4)
    */
   offContext?: { line: string; sample: number; refreshedAt: string };
+  /**
+   * One PubMed sentence on some Health & Wellness cards: how much literature
+   * exists, never whether anything works (../sources/evidence/context).
+   * Signed-in users only (BR-4)
+   */
+  pubmedContext?: { line: string; fetchedAt: string };
 };
 
 /** One bounded batch of cards; the feed only changes when a new cycle runs (BR-1). */

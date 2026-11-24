@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { chatEnabled } from '@/lib/chatFeature';
 import { LEGAL_OPERATOR } from '@/lib/legal';
+import { pubmedEnabled } from '@/lib/sources/evidence/enabled';
 import { offEnabled } from '@/lib/sources/off/enabled';
 import { ContactLink, List, P, type LegalSection } from './LegalPage';
 
@@ -160,6 +161,17 @@ export const termsSections: LegalSection[] = [
               Open Database License
             </a>
             .
+          </P>
+        )}
+        {pubmedEnabled() && (
+          <P>
+            Sebagian tren Health & Wellness memuat jumlah studi tentang topiknya di PubMed. Jumlah studi bukan bukti bahwa sebuah produk atau bahan
+            bekerja, aman, atau menyembuhkan, dan bukan saran medis. Dari{' '}
+            <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener noreferrer" className="underline">
+              MEDLINE®/PubMed®
+            </a>
+            , basis data National Library of Medicine AS (From MEDLINE®/PubMed®, a database of the U.S. National Library of Medicine). National
+            Library of Medicine tidak mendukung Elias atau isinya.
           </P>
         )}
       </>

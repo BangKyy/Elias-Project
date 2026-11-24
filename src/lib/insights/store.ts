@@ -113,6 +113,24 @@ async function readOffContext(supabase: SupabaseClient, ids: string[]): Promise<
   return new Map((data ?? []).map((row) => [row.insight_id, { line: row.line, sample: row.sample, refreshedAt: row.refreshed_at }]));
 }
 
+// PubMed lines likewise, until 20261124100000_pubmed_evidence.sql is applied
+const EVIDENCE_MIGRATION = '20261124100000_pubmed_evidence.sql';
+
+type EvidenceRow = { insight_id: string; source: string; line: string; fetched_at: string };
+
+/** The PubMed lines of these cards; RLS answers guests with none. */
+async function readPubmedContext(supabase: SupabaseClient, ids: string[]): Promise<Map<string, NonNullable<Insight['pubmedContext']>>> {
+  if (!ids.length) return new Map();
+  const { data, error } = await supabase
+    .from('insight_evidence_context')
+    .select('insight_id, source, line, fetched_at')
+    .eq('source', 'pubmed')
+    .in('insight_id', ids)
+    .returns<EvidenceRow[]>();
+  if (error && !missingTable(error)) console.error('Insight store: reading PubMed lines failed', error.message);
+  return new Map((data ?? []).map((row) => [row.insight_id, { line: row.line, fetchedAt: row.fetched_at }]));
+}
+
 function readCards(supabase: SupabaseClient, from: string, columns: string) {
   return supabase
     .from('insights')
@@ -143,14 +161,17 @@ export async function readWindow(supabase: SupabaseClient, today: string): Promi
     cards = await readCards(supabase, from, cardColumns);
   }
   if (cycles.error || cards.error) console.error('Insight store: read failed', cycles.error ?? cards.error);
-  const off = await readOffContext(supabase, (cards.data ?? []).map((row) => row.id));
+  const ids = (cards.data ?? []).map((row) => row.id);
+  const [off, pubmed] = await Promise.all([readOffContext(supabase, ids), readPubmedContext(supabase, ids)]);
 
   return {
     cycleDates: new Set((cycles.data ?? []).map((row) => row.cycle_date as string)),
     cards: (cards.data ?? []).flatMap((row) => {
       const insight = toInsight(row);
+      if (!insight) return [];
       const offContext = off.get(row.id);
-      return insight ? [{ cycleDate: row.cycle_date, insight: offContext ? { ...insight, offContext } : insight }] : [];
+      const pubmedContext = pubmed.get(row.id);
+      return [{ cycleDate: row.cycle_date, insight: { ...insight, ...(offContext && { offContext }), ...(pubmedContext && { pubmedContext }) } }];
     }),
   };
 }
@@ -229,14 +250,26 @@ export async function saveCycle(date: string, insights: Insight[]): Promise<void
     return;
   }
 
+  // A card without its context line is still a valid card, so a failure below keeps the day
   const offRows = insights.flatMap((insight) =>
     insight.offContext
       ? [{ insight_id: insight.id, line: insight.offContext.line, sample: insight.offContext.sample, refreshed_at: insight.offContext.refreshedAt }]
       : [],
   );
-  if (!offRows.length) return;
-  // A card without its line is still a valid card, so a failure here keeps the day
-  const { error: offError } = await admin.from('insight_off_context').insert(offRows);
-  if (missingTable(offError)) console.warn(`Insight store: saving cards without their Open Food Facts lines; apply ${OFF_MIGRATION}`);
-  else if (offError) console.error('Insight store: saving Open Food Facts lines failed', offError.message);
+  if (offRows.length) {
+    const { error: offError } = await admin.from('insight_off_context').insert(offRows);
+    if (missingTable(offError)) console.warn(`Insight store: saving cards without their Open Food Facts lines; apply ${OFF_MIGRATION}`);
+    else if (offError) console.error('Insight store: saving Open Food Facts lines failed', offError.message);
+  }
+
+  const pubmedRows = insights.flatMap((insight) =>
+    insight.pubmedContext
+      ? [{ insight_id: insight.id, source: 'pubmed', line: insight.pubmedContext.line, fetched_at: insight.pubmedContext.fetchedAt }]
+      : [],
+  );
+  if (pubmedRows.length) {
+    const { error: pubmedError } = await admin.from('insight_evidence_context').insert(pubmedRows);
+    if (missingTable(pubmedError)) console.warn(`Insight store: saving cards without their PubMed lines; apply ${EVIDENCE_MIGRATION}`);
+    else if (pubmedError) console.error('Insight store: saving PubMed lines failed', pubmedError.message);
+  }
 }

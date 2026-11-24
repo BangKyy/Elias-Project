@@ -93,13 +93,13 @@ async function Beranda({ searchParams, user }: { searchParams: SearchParams; use
   const feed = await getRecentFeed(supabase, { time, quiet: siklus === 'sepi' });
   // After the feed, so the first visit of the day reads the charts its cycle just stored
   const trending = await getTrending(feed.date);
-  // Guests get Tier-1 sources only (BR-4), without Open Food Facts lines:
-  // RLS hides stored ones, and today's cards may still carry theirs from memory
+  // Guests get Tier-1 sources only (BR-4), without Open Food Facts or PubMed
+  // lines: RLS hides stored ones, and today's cards may still carry theirs from memory
   const allCards = flavour
     ? feed.cards
     : feed.cards
         .filter((card) => sources[card.insight.source].tier === 1)
-        .map(({ insight: { offContext: _offContext, ...insight }, ...card }) => ({ ...card, insight }));
+        .map(({ insight: { offContext: _offContext, pubmedContext: _pubmedContext, ...insight }, ...card }) => ({ ...card, insight }));
 
   // Signed-in users open on the cards for their brand; guests and profiles
   // without a category keep the whole feed. Nothing fitting falls back to all
