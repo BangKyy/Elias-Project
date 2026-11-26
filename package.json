@@ -10,7 +10,9 @@
     "test:off": "node --experimental-strip-types --no-warnings --test scripts/off.test.mjs",
     "test:evidence": "node --experimental-strip-types --no-warnings --test scripts/evidence.test.mjs",
     "test:football": "node --experimental-strip-types --no-warnings --test scripts/football.test.mjs",
-    "football:refresh": "node scripts/football-refresh.mjs"
+    "football:refresh": "node scripts/football-refresh.mjs",
+    "test:legal": "node --test scripts/legal.test.mjs",
+    "test:legal-pages": "node --test scripts/legal.pages.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

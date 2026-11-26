@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { chatEnabled } from '@/lib/chatFeature';
-import { LEGAL_OPERATOR } from '@/lib/legal';
+import { LEGAL_OPERATOR, LEGAL_OPERATOR_DESCRIPTION, PINTEREST_INTEGRATION_LIVE } from '@/lib/legal';
 import { pubmedEnabled } from '@/lib/sources/evidence/enabled';
 import { footballEnabled } from '@/lib/sources/footballdata/enabled';
-import { ContactLink, List, P, type LegalSection } from './LegalPage';
+import { offEnabled } from '@/lib/sources/off/enabled';
+import { ContactLink, InstagramLink, List, P, PinterestSource, type LegalSection } from './LegalPage';
 
 // The Chat passages follow the same switch as Chat itself (lib/chatFeature),
 // so the policy never describes a feature people can't use yet, or misses one they can
@@ -28,9 +29,9 @@ export const privacySections: LegalSection[] = [
     title: 'Siapa yang mengelola data kamu',
     content: (
       <P>
-        Data pribadi di Elias dikelola oleh <strong>{LEGAL_OPERATOR}</strong>. Kebijakan ini menjelaskan data apa yang dikumpulkan, untuk apa,
-        dengan siapa dibagikan, dan hak kamu menurut Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP). Hubungi
-        kami di <ContactLink />.
+        Elias dikembangkan dan dikelola oleh <strong>{LEGAL_OPERATOR}</strong>, {LEGAL_OPERATOR_DESCRIPTION.id} (Instagram: <InstagramLink />),
+        yang mengelola data pribadi di Elias. Kebijakan ini menjelaskan data apa yang dikumpulkan, untuk apa, dengan siapa dibagikan, dan hak
+        kamu menurut Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP). Hubungi kami di <ContactLink />.
       </P>
     ),
   },
@@ -134,9 +135,46 @@ export const privacySections: LegalSection[] = [
         </List>
         <P>
           Untuk menyusun daftar tren, server Elias juga mengambil data publik dari Google Trends, YouTube, GDELT, Google News, newsdata.io, situs berita,
-          Wikipedia, dan GitHub{pubmedEnabled() ? ', serta jumlah studi dari PubMed untuk sebagian tren Health & Wellness' : ''}{footballEnabled() ? ', serta jadwal dan klasemen sepak bola dari football-data.org' : ''}. Permintaan itu memakai kata kunci
-          tren, bukan data pribadi kamu atau nama brand kamu.
+          Wikipedia, dan GitHub{pubmedEnabled() ? ', serta jumlah studi dari PubMed untuk sebagian tren Health & Wellness' : ''}{footballEnabled() ? ', serta jadwal dan klasemen sepak bola dari football-data.org' : ''}
+          {offEnabled() ? ', serta data produk dari Open Food Facts untuk sebagian tren Food & Beverage' : ''}, ditambah <PinterestSource />. Permintaan itu
+          memakai kata kunci tren, bukan data pribadi kamu atau nama brand kamu.
         </P>
+      </>
+    ),
+  },
+  {
+    id: 'pinterest',
+    title: 'Pinterest Trends API',
+    content: (
+      <>
+        <P>
+          {PINTEREST_INTEGRATION_LIVE
+            ? 'Elias memakai Pinterest Trends API sebagai salah satu sumber sinyal tren. Bagian ini menjelaskan apa saja yang termasuk dalam integrasinya.'
+            : 'Elias sedang mengintegrasikan Pinterest Trends API sebagai salah satu sumber sinyal tren. Sebelum integrasi itu aktif, Elias tidak membaca data apa pun dari Pinterest. Bagian ini menjelaskan apa saja yang termasuk dalam integrasinya.'}
+        </P>
+        <List>
+          <li>
+            <strong>Yang dibaca:</strong> kata kunci pencarian yang sedang tren di suatu wilayah, bisa disaring per kategori minat, beserta
+            persentase pertumbuhan dan volume pencarian relatifnya. Ini informasi tren agregat, bukan data pribadi.
+          </li>
+          <li>
+            <strong>Yang tidak dilakukan:</strong> Elias tidak membaca, membuat, mengubah, atau menghapus Pin atau board, tidak memposting atas
+            nama siapa pun, dan tidak mengakses profil atau konten pengguna Pinterest. Pengguna Elias tidak pernah diminta menghubungkan atau
+            masuk dengan akun Pinterest.
+          </li>
+          <li>
+            <strong>Autentikasi:</strong> Elias mengakses API dengan kredensial aplikasinya sendiri melalui alur OAuth 2.0 Pinterest. Kredensial
+            dan token hanya disimpan di sisi server.
+          </li>
+          <li>
+            <strong>Penyimpanan:</strong> Elias tidak menyimpan respons mentah dari Pinterest API dan tidak membangun dataset historis darinya.
+            Informasi tren dipakai untuk menyusun rekomendasi hari itu.
+          </li>
+          <li>
+            <strong>Tanpa afiliasi:</strong> Elias tidak berafiliasi dengan, disponsori, atau didukung oleh Pinterest. Pinterest adalah merek
+            dagang Pinterest, Inc.
+          </li>
+        </List>
       </>
     ),
   },
@@ -226,8 +264,8 @@ export const privacySections: LegalSection[] = [
     title: 'Kontak',
     content: (
       <P>
-        Pertanyaan atau permintaan tentang data pribadi kamu bisa dikirim ke <ContactLink />. Sebutkan email akun kamu agar kami bisa
-        menemukannya.
+        Pertanyaan atau permintaan tentang data pribadi kamu bisa dikirim ke {LEGAL_OPERATOR} di <ContactLink />. Sebutkan email akun kamu
+        agar kami bisa menemukannya. {LEGAL_OPERATOR} juga bisa dihubungi lewat Instagram: <InstagramLink />.
       </P>
     ),
   },

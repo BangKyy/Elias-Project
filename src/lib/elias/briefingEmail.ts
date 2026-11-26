@@ -1,4 +1,5 @@
 import { creativeRoleLabels, type CreativeRole } from '../creativeRoles';
+import { LEGAL_OPERATOR } from '../legal';
 import type { NewsContext } from '../gdelt';
 import type { YouTubeTrends } from '../youtube';
 import { decisionLabels } from './brief';
@@ -108,7 +109,7 @@ ${section(`${monoLabel('So what')}${paragraph(insight.soWhat)}`)}
 ${actionSection(insight)}
 ${section(`${monoLabel('Kenapa')}${paragraph(insight.why)}`)}
 ${contextSection(news, youtube)}
-<tr><td style="padding:20px 32px;border-top:1px solid ${border};font-family:${mono};font-size:11px;color:${muted}">ELIAS — Daily Creative Intelligence · Sumur Creative</td></tr>
+<tr><td style="padding:20px 32px;border-top:1px solid ${border};font-family:${mono};font-size:11px;color:${muted}">ELIAS — Daily Creative Intelligence · ${esc(LEGAL_OPERATOR)}</td></tr>
 </table>
 </td></tr>
 </table>

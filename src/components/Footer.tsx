@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LEGAL_OPERATOR, LEGAL_OPERATOR_DESCRIPTION } from '@/lib/legal';
 
 const links = [
   { label: 'Syarat', href: '/syarat' },
@@ -17,7 +18,7 @@ export default function Footer() {
         {/* Mobile: links above the copyright, centered */}
         <div className="flex flex-col-reverse items-center gap-4 text-md text-neutral-500 md:flex-row md:gap-8">
           <p className="text-center md:min-w-0 md:flex-[1_0_0] md:text-left">
-            © 2026 Elias. Hak cipta dilindungi.
+            © 2026 {LEGAL_OPERATOR}. Elias dikembangkan oleh {LEGAL_OPERATOR}, {LEGAL_OPERATOR_DESCRIPTION.id}.
           </p>
           <nav aria-label="Tautan footer" className="flex gap-4 whitespace-nowrap">
             {links.map((link) => (

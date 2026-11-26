@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { chatEnabled } from '@/lib/chatFeature';
-import { LEGAL_OPERATOR } from '@/lib/legal';
+import { LEGAL_OPERATOR, LEGAL_OPERATOR_DESCRIPTION } from '@/lib/legal';
 import { pubmedEnabled } from '@/lib/sources/evidence/enabled';
 import { footballEnabled } from '@/lib/sources/footballdata/enabled';
 import { offEnabled } from '@/lib/sources/off/enabled';
-import { ContactLink, List, P, type LegalSection } from './LegalPage';
+import { ContactLink, InstagramLink, List, P, PinterestSource, type LegalSection } from './LegalPage';
 
 // The Chat passages follow the same switch as Chat itself (lib/chatFeature)
 
@@ -25,8 +25,9 @@ export const termsSections: LegalSection[] = [
     content: (
       <>
         <P>
-          Elias adalah layanan yang dikelola oleh <strong>{LEGAL_OPERATOR}</strong>. Elias membantu tim kreatif dan pemilik brand
-          membaca tren harian dan memutuskan mana yang layak dieksekusi, dipantau, atau dilewati.
+          Elias dikembangkan dan dikelola oleh <strong>{LEGAL_OPERATOR}</strong>, {LEGAL_OPERATOR_DESCRIPTION.id}. Elias membantu tim kreatif dan
+          pemilik brand membaca tren harian dan memutuskan mana yang layak dieksekusi, dipantau, atau dilewati. {LEGAL_OPERATOR} bisa dihubungi
+          di <ContactLink /> dan lewat Instagram: <InstagramLink />.
         </P>
         <P>
           Dengan membuat akun atau memakai Elias, kamu menyetujui Syarat & Ketentuan ini, <Link href="/privasi" className="font-semibold text-primary hover:underline">Kebijakan Privasi</Link>, dan{' '}
@@ -59,8 +60,8 @@ export const termsSections: LegalSection[] = [
       <>
         <P>
           Setiap hari Elias mengumpulkan sinyal dari sumber publik: Google Trends, YouTube, GDELT, Google News, newsdata.io, situs berita Indonesia (antara lain
-          Antara, CNN Indonesia, detikNews, CNBC Indonesia, Republika, dan DailySocial), Wikipedia, dan GitHub. Dari sinyal itu Elias
-          menyusun daftar tren di Beranda.
+          Antara, CNN Indonesia, detikNews, CNBC Indonesia, Republika, dan DailySocial), Wikipedia, dan GitHub, ditambah <PinterestSource />. Dari
+          sinyal itu Elias menyusun daftar tren di Beranda.
         </P>
         <P>
           Saat kamu meminta analisis untuk brand kamu, Elias mengirim informasi brand dan topik tren ke model AI melalui layanan OpenRouter.

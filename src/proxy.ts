@@ -11,8 +11,9 @@ const guestPaths = ['/login', '/signup'];
 // before any session exists. API
 // routes check the session themselves and answer with JSON, not a redirect
 const openPrefixes = ['/forgot-password', '/auth/', '/api/'];
-// The legal documents: readable by anyone, at any point of sign-up or onboarding
-const legalPaths = ['/syarat', '/privasi', '/cookies'];
+// The legal documents, the English policy for Pinterest's reviewers included:
+// readable by anyone, at any point of sign-up or onboarding
+const legalPaths = ['/syarat', '/privasi', '/cookies', '/en/privacy'];
 // App pages guests can use: a device-scoped Arsip (AR-8). Signed-in users
 // still have to finish onboarding first. Never add /chat: Chat is for
 // signed-in users only (docs/MVP.md, MVP 7)

@@ -832,7 +832,17 @@ export function AuthFooterNote({
           {linkLabel}
         </Link>
       </p>
-      <p>Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Elias.</p>
+      <p>
+        Dengan melanjutkan, kamu menyetujui{' '}
+        <Link href="/syarat" className="text-primary hover:underline">
+          Ketentuan Layanan
+        </Link>{' '}
+        dan{' '}
+        <Link href="/privasi" className="text-primary hover:underline">
+          Kebijakan Privasi
+        </Link>{' '}
+        Elias.
+      </p>
     </div>
   );
 }

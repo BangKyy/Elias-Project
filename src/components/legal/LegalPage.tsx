@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { CaretDown } from '@phosphor-icons/react/dist/ssr';
-import { LEGAL_CONTACT_EMAIL, LEGAL_EFFECTIVE_DATE, legalDocs } from '@/lib/legal';
+import { LEGAL_CONTACT_EMAIL, LEGAL_EFFECTIVE_DATE, LEGAL_INSTAGRAM_URL, PINTEREST_INTEGRATION_LIVE, legalDocs } from '@/lib/legal';
 
 export type LegalSection = { id: string; title: string; content: ReactNode };
 
@@ -29,6 +29,26 @@ export function ContactLink() {
     <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="font-semibold break-all text-primary underline-offset-2 hover:underline">
       {LEGAL_CONTACT_EMAIL}
     </a>
+  );
+}
+
+export function InstagramLink() {
+  return (
+    <a href={LEGAL_INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="font-semibold break-all text-primary underline-offset-2 hover:underline">
+      {LEGAL_INSTAGRAM_URL}
+    </a>
+  );
+}
+
+/**
+ * Pinterest in a list of trend sources: named as being integrated, with
+ * no data read, until PINTEREST_INTEGRATION_LIVE (BR-5)
+ */
+export function PinterestSource() {
+  return PINTEREST_INTEGRATION_LIVE ? (
+    <>Pinterest Trends API</>
+  ) : (
+    <>Pinterest Trends API (sedang diintegrasikan; sebelum integrasinya aktif, Elias tidak membaca data apa pun dari Pinterest)</>
   );
 }
 
